@@ -149,7 +149,7 @@ AUTHENTICATION_BACKENDS = [
 SITE_ID = 1
 
 # AllAuth Settings (Updated for latest version)
-ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_LOGIN_METHODS = {'username', 'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 LOGIN_REDIRECT_URL = '/dashboard/'
