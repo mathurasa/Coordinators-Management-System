@@ -1,0 +1,368 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Upload Document - Yarl IT Hub{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-file-earmark-plus"></i> Upload Document
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'documents_list' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Documents
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Document Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" id="document-form">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.title.id_for_label }}" class="form-label">
+                            <i class="bi bi-pencil"></i> Document Title *
+                        </label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.title.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">
+                            <i class="bi bi-text-paragraph"></i> Description
+                        </label>
+                        {{ form.description }}
+                        <div class="form-text">
+                            Provide a brief description of the document content and purpose.
+                        </div>
+                        {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.description.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.file.id_for_label }}" class="form-label">
+                            <i class="bi bi-file-earmark"></i> File *
+                        </label>
+                        {{ form.file }}
+                        <div class="form-text">
+                            Supported formats: PDF, DOC, DOCX, TXT, JPG, JPEG, PNG, GIF. Maximum size: 10MB.
+                        </div>
+                        {% if form.file.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.file.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.initiative.id_for_label }}" class="form-label">
+                                    <i class="bi bi-lightbulb"></i> Initiative *
+                                </label>
+                                {{ form.initiative }}
+                                {% if form.initiative.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.initiative.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.task.id_for_label }}" class="form-label">
+                                    <i class="bi bi-list-check"></i> Related Task (Optional)
+                                </label>
+                                {{ form.task }}
+                                <div class="form-text">
+                                    Select a specific task if this document relates to one.
+                                </div>
+                                {% if form.task.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.task.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- File Preview Area -->
+                    <div id="file-preview" class="mb-3" style="display: none;">
+                        <div class="card border-dashed">
+                            <div class="card-body text-center">
+                                <div id="preview-content"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'documents_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="upload-btn">
+                            <i class="bi bi-cloud-upload"></i> Upload Document
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Upload Guidelines
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        Use descriptive file names
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        Maximum file size: 10MB
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        Supported formats: PDF, DOC, images
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        Add clear descriptions
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-shield-check"></i> File Security
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted">
+                    All uploaded files are scanned for security threats and stored securely. 
+                    Only authorized coordinators can access documents related to their districts.
+                </p>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-file-earmark-text"></i> File Types
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="text-center mb-2">
+                            <i class="bi bi-file-pdf text-danger" style="font-size: 2rem;"></i>
+                            <div class="small">PDF</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center mb-2">
+                            <i class="bi bi-file-word text-primary" style="font-size: 2rem;"></i>
+                            <div class="small">DOC/DOCX</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center mb-2">
+                            <i class="bi bi-file-image text-success" style="font-size: 2rem;"></i>
+                            <div class="small">Images</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center mb-2">
+                            <i class="bi bi-file-text text-info" style="font-size: 2rem;"></i>
+                            <div class="small">TXT</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.border-dashed {
+    border: 2px dashed #dee2e6 !important;
+}
+
+.file-drop-zone {
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.file-drop-zone:hover {
+    border-color: #007bff;
+    background-color: #f8f9fa;
+}
+
+.file-drop-zone.dragover {
+    border-color: #007bff;
+    background-color: #e3f2fd;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // File preview functionality
+    $('#{{ form.file.id_for_label }}').on('change', function() {
+        var file = this.files[0];
+        var previewDiv = $('#file-preview');
+        var previewContent = $('#preview-content');
+        
+        if (file) {
+            var fileSize = (file.size / 1024 / 1024).toFixed(2);
+            var fileName = file.name;
+            var fileType = file.type;
+            
+            // Show preview
+            previewDiv.show();
+            
+            // Create preview content
+            var previewHtml = `
+                <div class="d-flex align-items-center justify-content-center">
+                    <div class="me-3">
+                        ${getFileIcon(fileName)}
+                    </div>
+                    <div class="text-start">
+                        <div class="fw-bold">${fileName}</div>
+                        <div class="text-muted small">Size: ${fileSize} MB</div>
+                        <div class="text-muted small">Type: ${fileType || 'Unknown'}</div>
+                    </div>
+                </div>
+            `;
+            
+            // Add image preview for image files
+            if (file.type.startsWith('image/')) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    previewHtml += `
+                        <div class="mt-3">
+                            <img src="${e.target.result}" class="img-thumbnail" style="max-height: 200px;">
+                        </div>
+                    `;
+                    previewContent.html(previewHtml);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewContent.html(previewHtml);
+            }
+            
+            // Validate file size
+            if (fileSize > 10) {
+                previewDiv.removeClass('border-success').addClass('border-danger');
+                previewContent.append('<div class="alert alert-danger mt-2 mb-0">File size exceeds 10MB limit!</div>');
+                $('#upload-btn').prop('disabled', true);
+            } else {
+                previewDiv.removeClass('border-danger').addClass('border-success');
+                $('#upload-btn').prop('disabled', false);
+            }
+        } else {
+            previewDiv.hide();
+            $('#upload-btn').prop('disabled', false);
+        }
+    });
+    
+    // Auto-update task options based on selected initiative
+    $('#{{ form.initiative.id_for_label }}').on('change', function() {
+        var initiativeId = $(this).val();
+        var taskSelect = $('#{{ form.task.id_for_label }}');
+        
+        if (initiativeId) {
+            taskSelect.find('option:not(:first)').remove();
+            taskSelect.append('<option value="">Loading tasks...</option>');
+            
+            // In a real implementation, make AJAX call to get tasks
+            setTimeout(function() {
+                taskSelect.find('option:last').remove();
+                taskSelect.append('<option value="">No related task</option>');
+            }, 1000);
+        } else {
+            taskSelect.find('option:not(:first)').remove();
+        }
+    });
+    
+    // Progress bar for upload
+    $('#document-form').on('submit', function() {
+        var submitBtn = $('#upload-btn');
+        var originalText = submitBtn.html();
+        
+        submitBtn.html('<i class="bi bi-hourglass-split"></i> Uploading...').prop('disabled', true);
+        
+        // Re-enable button after 30 seconds in case of errors
+        setTimeout(function() {
+            submitBtn.html(originalText).prop('disabled', false);
+        }, 30000);
+    });
+    
+    function getFileIcon(fileName) {
+        var extension = fileName.split('.').pop().toLowerCase();
+        var iconClass = 'bi-file-earmark';
+        var iconColor = 'text-secondary';
+        
+        switch(extension) {
+            case 'pdf':
+                iconClass = 'bi-file-pdf';
+                iconColor = 'text-danger';
+                break;
+            case 'doc':
+            case 'docx':
+                iconClass = 'bi-file-word';
+                iconColor = 'text-primary';
+                break;
+            case 'jpg':
+            case 'jpeg':
+            case 'png':
+            case 'gif':
+                iconClass = 'bi-file-image';
+                iconColor = 'text-success';
+                break;
+            case 'txt':
+                iconClass = 'bi-file-text';
+                iconColor = 'text-info';
+                break;
+        }
+        
+        return `<i class="bi ${iconClass} ${iconColor}" style="font-size: 2rem;"></i>`;
+    }
+</script>
+{% endblock %}

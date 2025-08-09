@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if object %}Edit Note{% else %}Create Note{% endif %} - Yarl IT Hub
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-journal-text"></i> 
+        {% if object %}Edit Note{% else %}Create New Note{% endif %}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'notes_list' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Notes
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Note Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="note-form">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.title.id_for_label }}" class="form-label">
+                            <i class="bi bi-pencil"></i> Title *
+                        </label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.title.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.note_type.id_for_label }}" class="form-label">
+                                    <i class="bi bi-tag"></i> Type *
+                                </label>
+                                {{ form.note_type }}
+                                {% if form.note_type.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.note_type.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3 form-check pt-4">
+                                {{ form.is_public }}
+                                <label for="{{ form.is_public.id_for_label }}" class="form-check-label">
+                                    <i class="bi bi-eye"></i> Make this note public
+                                </label>
+                                <div class="form-text">
+                                    Public notes can be viewed by other coordinators in the same district.
+                                </div>
+                                {% if form.is_public.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.is_public.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.initiative.id_for_label }}" class="form-label">
+                                    <i class="bi bi-lightbulb"></i> Initiative *
+                                </label>
+                                {{ form.initiative }}
+                                {% if form.initiative.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.initiative.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.task.id_for_label }}" class="form-label">
+                                    <i class="bi bi-list-check"></i> Related Task (Optional)
+                                </label>
+                                {{ form.task }}
+                                <div class="form-text">
+                                    Select a specific task if this note relates to one.
+                                </div>
+                                {% if form.task.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.task.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.content.id_for_label }}" class="form-label">
+                            <i class="bi bi-text-paragraph"></i> Content *
+                        </label>
+                        {{ form.content }}
+                        <div class="form-text">
+                            Provide detailed information, meeting minutes, updates, or observations.
+                        </div>
+                        {% if form.content.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.content.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'notes_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> 
+                            {% if object %}Update Note{% else %}Save Note{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Note Types
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <strong>Meeting:</strong> Meeting minutes and discussions
+                    </li>
+                    <li class="mb-2">
+                        <strong>Workshop:</strong> Workshop summaries and outcomes
+                    </li>
+                    <li class="mb-2">
+                        <strong>General:</strong> General observations and updates
+                    </li>
+                    <li class="mb-2">
+                        <strong>Milestone:</strong> Progress milestones and achievements
+                    </li>
+                    <li class="mb-2">
+                        <strong>Feedback:</strong> Feedback and suggestions
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-lightbulb"></i> Writing Tips
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        Use clear, descriptive titles
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        Include dates and participants
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        Note action items and decisions
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        Keep content organized and readable
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-update task options based on selected initiative
+    $('#{{ form.initiative.id_for_label }}').on('change', function() {
+        var initiativeId = $(this).val();
+        var taskSelect = $('#{{ form.task.id_for_label }}');
+        
+        if (initiativeId) {
+            // Clear current options except the first one
+            taskSelect.find('option:not(:first)').remove();
+            
+            // In a real implementation, you would make an AJAX call here
+            // to get tasks for the selected initiative
+            taskSelect.append('<option value="">Loading tasks...</option>');
+            
+            // Simulated AJAX call
+            setTimeout(function() {
+                taskSelect.find('option:last').remove();
+                taskSelect.append('<option value="">No related task</option>');
+                // Add actual task options here via AJAX
+            }, 1000);
+        } else {
+            taskSelect.find('option:not(:first)').remove();
+        }
+    });
+    
+    // Character counter for content
+    $('#{{ form.content.id_for_label }}').on('input', function() {
+        var length = $(this).val().length;
+        var counter = $('#content-counter');
+        
+        if (counter.length === 0) {
+            $(this).after('<div id="content-counter" class="form-text text-end"></div>');
+            counter = $('#content-counter');
+        }
+        
+        counter.text(length + ' characters');
+        
+        if (length > 1000) {
+            counter.addClass('text-warning');
+        } else {
+            counter.removeClass('text-warning');
+        }
+    });
+    
+    // Trigger counter on page load
+    $('#{{ form.content.id_for_label }}').trigger('input');
+</script>
+{% endblock %}

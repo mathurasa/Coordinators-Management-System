@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Yarl IT Hub{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Dashboard</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportToCSV('initiatives-table', 'initiatives.csv')">
+                <i class="bi bi-download"></i> Export
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="printPage()">
+                <i class="bi bi-printer"></i> Print
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4" id="dashboard-stats">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card text-center">
+            <div class="stat-icon text-primary">
+                <i class="bi bi-lightbulb"></i>
+            </div>
+            <div class="stat-number text-primary" id="total-initiatives">{{ total_initiatives }}</div>
+            <div class="stat-label">Total Initiatives</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card text-center">
+            <div class="stat-icon text-success">
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="stat-number text-success" id="active-initiatives">{{ active_initiatives }}</div>
+            <div class="stat-label">Active Initiatives</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card text-center">
+            <div class="stat-icon text-info">
+                <i class="bi bi-list-check"></i>
+            </div>
+            <div class="stat-number text-info" id="total-tasks">{{ total_tasks }}</div>
+            <div class="stat-label">Total Tasks</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card text-center">
+            <div class="stat-icon text-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <div class="stat-number text-warning" id="overdue-tasks">{{ overdue_tasks }}</div>
+            <div class="stat-label">Overdue Tasks</div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Stats Row -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card text-center">
+            <div class="stat-icon text-success">
+                <i class="bi bi-check2-all"></i>
+            </div>
+            <div class="stat-number text-success" id="completed-tasks">{{ completed_tasks }}</div>
+            <div class="stat-label">Completed Tasks</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card text-center">
+            <div class="stat-icon text-primary">
+                <i class="bi bi-calendar-check"></i>
+            </div>
+            <div class="stat-number text-primary">{{ weekly_completed_tasks }}</div>
+            <div class="stat-label">This Week</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card text-center">
+            <div class="stat-icon text-info">
+                <i class="bi bi-people"></i>
+            </div>
+            <div class="stat-number text-info">{{ coordinators.count }}</div>
+            <div class="stat-label">Coordinators</div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card text-center">
+            <div class="stat-icon text-secondary">
+                <i class="bi bi-geo-alt"></i>
+            </div>
+            <div class="stat-number text-secondary">{{ districts.count }}</div>
+            <div class="stat-label">Districts</div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Row -->
+<div class="row">
+    <!-- Recent Tasks -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-check"></i> Recent Tasks
+                </h5>
+                <a href="{% url 'tasks_list' %}" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recent_tasks %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Task</th>
+                                    <th>Initiative</th>
+                                    <th>Assigned To</th>
+                                    <th>Status</th>
+                                    <th>Due Date</th>
+                                    <th>Progress</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task in recent_tasks %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'task_detail' task.pk %}" class="text-decoration-none">
+                                            {{ task.title|truncatechars:30 }}
+                                        </a>
+                                    </td>
+                                    <td>{{ task.initiative.title|truncatechars:25 }}</td>
+                                    <td>{{ task.assigned_to.user.get_full_name|default:task.assigned_to.user.username }}</td>
+                                    <td>
+                                        <span class="status-badge status-{{ task.status|replace:'_':'-' }}">
+                                            {{ task.get_status_display|upper }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ task.due_date|date:"M d, Y" }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: {{ task.progress_percentage }}%"
+                                                 aria-valuenow="{{ task.progress_percentage }}" 
+                                                 aria-valuemin="0" aria-valuemax="100">
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">{{ task.progress_percentage }}%</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-list-check" style="font-size: 3rem;"></i>
+                        <p class="mt-2">No tasks found</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Notes -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-journal-text"></i> Recent Notes
+                </h5>
+                <a href="{% url 'notes_list' %}" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recent_notes %}
+                    <div class="timeline">
+                        {% for note in recent_notes %}
+                        <div class="timeline-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ note.title|truncatechars:40 }}</h6>
+                                    <p class="text-muted mb-1">{{ note.content|truncatechars:80 }}</p>
+                                    <small class="text-muted">
+                                        <i class="bi bi-person"></i> {{ note.author.user.get_full_name|default:note.author.user.username }}
+                                        <br>
+                                        <i class="bi bi-calendar"></i> {{ note.created_at|date:"M d, Y" }}
+                                    </small>
+                                </div>
+                                <span class="badge bg-secondary">{{ note.get_note_type_display }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-journal-text" style="font-size: 3rem;"></i>
+                        <p class="mt-2">No notes found</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning"></i> Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'initiative_create' %}" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-plus-circle"></i> New Initiative
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'task_create' %}" class="btn btn-outline-success w-100">
+                            <i class="bi bi-plus-circle"></i> New Task
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'note_create' %}" class="btn btn-outline-info w-100">
+                            <i class="bi bi-plus-circle"></i> New Note
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'document_create' %}" class="btn btn-outline-warning w-100">
+                            <i class="bi bi-plus-circle"></i> Upload Document
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- District Overview (Admin Only) -->
+{% if user.profile.role == 'admin' %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-geo-alt"></i> District Overview
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for district in districts %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card border">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">{{ district.name }}</h6>
+                                <p class="text-muted">{{ district.description|truncatechars:50 }}</p>
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <div class="text-primary fw-bold">
+                                            {{ district.initiatives.count }}
+                                        </div>
+                                        <small class="text-muted">Initiatives</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="text-success fw-bold">
+                                            {{ district.initiatives.filter.status='active'|length }}
+                                        </div>
+                                        <small class="text-muted">Active</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-refresh dashboard stats every 30 seconds
+    setInterval(function() {
+        refreshDashboardStats();
+    }, 30000);
+</script>
+{% endblock %}

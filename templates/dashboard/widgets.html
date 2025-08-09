@@ -1,0 +1,439 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Widgets - Yarl IT Hub{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-grid-3x3"></i> Widgets
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-plus"></i> Add Widget
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Info Boxes -->
+<div class="row">
+    <div class="col-12">
+        <h4>Info Boxes</h4>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="info-box bg-primary text-white">
+            <span class="info-box-icon">
+                <i class="bi bi-lightbulb"></i>
+            </span>
+            <div class="info-box-content">
+                <span class="info-box-text">Initiatives</span>
+                <span class="info-box-number">150</span>
+                <div class="progress">
+                    <div class="progress-bar" style="width: 70%"></div>
+                </div>
+                <span class="progress-description">70% Increase in 30 Days</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="info-box bg-success text-white">
+            <span class="info-box-icon">
+                <i class="bi bi-check-circle"></i>
+            </span>
+            <div class="info-box-content">
+                <span class="info-box-text">Completed</span>
+                <span class="info-box-number">53%</span>
+                <div class="progress">
+                    <div class="progress-bar" style="width: 53%"></div>
+                </div>
+                <span class="progress-description">Completion Rate</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="info-box bg-warning text-white">
+            <span class="info-box-icon">
+                <i class="bi bi-person-plus"></i>
+            </span>
+            <div class="info-box-content">
+                <span class="info-box-text">New Users</span>
+                <span class="info-box-number">44</span>
+                <div class="progress">
+                    <div class="progress-bar" style="width: 44%"></div>
+                </div>
+                <span class="progress-description">User Registrations</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="info-box bg-danger text-white">
+            <span class="info-box-icon">
+                <i class="bi bi-people"></i>
+            </span>
+            <div class="info-box-content">
+                <span class="info-box-text">Unique Visitors</span>
+                <span class="info-box-number">65</span>
+                <div class="progress">
+                    <div class="progress-bar" style="width: 65%"></div>
+                </div>
+                <span class="progress-description">Unique Visitors</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Small Boxes -->
+<div class="row">
+    <div class="col-12">
+        <h4>Small Boxes</h4>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h3>150</h3>
+                <p>New Orders</p>
+            </div>
+            <div class="icon">
+                <i class="bi bi-bag"></i>
+            </div>
+            <a href="#" class="small-box-footer">
+                More info <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h3>53<sup style="font-size: 20px">%</sup></h3>
+                <p>Bounce Rate</p>
+            </div>
+            <div class="icon">
+                <i class="bi bi-graph-up"></i>
+            </div>
+            <a href="#" class="small-box-footer">
+                More info <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-warning">
+            <div class="inner">
+                <h3>44</h3>
+                <p>User Registrations</p>
+            </div>
+            <div class="icon">
+                <i class="bi bi-person-plus"></i>
+            </div>
+            <a href="#" class="small-box-footer">
+                More info <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-danger">
+            <div class="inner">
+                <h3>65</h3>
+                <p>Unique Visitors</p>
+            </div>
+            <div class="icon">
+                <i class="bi bi-pie-chart"></i>
+            </div>
+            <a href="#" class="small-box-footer">
+                More info <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Cards -->
+<div class="row">
+    <div class="col-12">
+        <h4>Cards</h4>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card card-primary">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="bi bi-calendar"></i>
+                    Calendar
+                </h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-bs-toggle="tooltip" title="Calendar">
+                        <i class="bi bi-calendar"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="calendar-widget" style="height: 250px;">
+                    <div class="text-center mt-5">
+                        <i class="bi bi-calendar" style="font-size: 3rem; color: #ccc;"></i>
+                        <p class="text-muted mt-2">Calendar Widget</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card card-success">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="bi bi-graph-up"></i>
+                    Sales Graph
+                </h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-bs-toggle="tooltip" title="Chart">
+                        <i class="bi bi-graph-up"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="mini-chart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card card-warning">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="bi bi-bell"></i>
+                    Notifications
+                </h3>
+                <div class="card-tools">
+                    <span class="badge bg-warning">3</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="notification-item d-flex align-items-center mb-3">
+                    <div class="me-3">
+                        <i class="bi bi-exclamation-triangle text-warning"></i>
+                    </div>
+                    <div>
+                        <strong>System Update</strong><br>
+                        <small class="text-muted">2 hours ago</small>
+                    </div>
+                </div>
+                <div class="notification-item d-flex align-items-center mb-3">
+                    <div class="me-3">
+                        <i class="bi bi-info-circle text-info"></i>
+                    </div>
+                    <div>
+                        <strong>New Feature</strong><br>
+                        <small class="text-muted">1 day ago</small>
+                    </div>
+                </div>
+                <div class="notification-item d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="bi bi-check-circle text-success"></i>
+                    </div>
+                    <div>
+                        <strong>Task Completed</strong><br>
+                        <small class="text-muted">3 days ago</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Info Box Styles */
+.info-box {
+    display: flex;
+    min-height: 80px;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+    margin-bottom: 15px;
+}
+
+.info-box-icon {
+    border-radius: 0.375rem;
+    align-items: center;
+    display: flex;
+    font-size: 1.875rem;
+    justify-content: center;
+    text-align: center;
+    width: 70px;
+    color: rgba(255,255,255,.8);
+    background: rgba(0,0,0,.1);
+}
+
+.info-box-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 1.8;
+    margin-left: 10px;
+    padding: 5px 10px;
+}
+
+.info-box-text {
+    text-transform: uppercase;
+    font-weight: bold;
+    font-size: 0.875rem;
+}
+
+.info-box-number {
+    font-size: 1.875rem;
+    font-weight: bold;
+}
+
+.progress-description {
+    font-size: 0.75rem;
+    margin: 0;
+}
+
+/* Small Box Styles */
+.small-box {
+    border-radius: 0.375rem;
+    box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+    display: block;
+    margin-bottom: 20px;
+    position: relative;
+    color: #fff;
+}
+
+.small-box > .inner {
+    padding: 10px;
+}
+
+.small-box .icon {
+    color: rgba(0,0,0,.15);
+    z-index: 0;
+}
+
+.small-box .icon > i {
+    font-size: 70px;
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    transition: all .3s linear;
+}
+
+.small-box .small-box-footer {
+    background: rgba(0,0,0,.1);
+    color: rgba(255,255,255,.8);
+    display: block;
+    padding: 3px 0;
+    position: relative;
+    text-align: center;
+    text-decoration: none;
+    z-index: 10;
+}
+
+.small-box .small-box-footer:hover {
+    color: #fff;
+    background: rgba(0,0,0,.15);
+}
+
+.small-box h3 {
+    font-size: 2.2rem;
+    font-weight: bold;
+    margin: 0 0 10px 0;
+    white-space: nowrap;
+    padding: 0;
+}
+
+/* Card Styles */
+.card-primary {
+    border-top: 3px solid #007bff;
+}
+
+.card-success {
+    border-top: 3px solid #28a745;
+}
+
+.card-warning {
+    border-top: 3px solid #ffc107;
+}
+
+.card-danger {
+    border-top: 3px solid #dc3545;
+}
+
+.card-tools {
+    margin: -0.75rem -0.75rem -0.75rem auto;
+    padding: 0.75rem;
+}
+
+.btn-tool {
+    background: transparent;
+    border: 0;
+    color: #adb5bd;
+    font-size: 0.875rem;
+    padding: 0;
+    line-height: 1;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Mini Chart
+    const miniCtx = document.getElementById('mini-chart').getContext('2d');
+    const miniChart = new Chart(miniCtx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Sales',
+                data: [10, 20, 15, 30, 25, 40],
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    display: false
+                },
+                y: {
+                    display: false
+                }
+            },
+            elements: {
+                point: {
+                    radius: 0
+                }
+            }
+        }
+    });
+
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+</script>
+{% endblock %}

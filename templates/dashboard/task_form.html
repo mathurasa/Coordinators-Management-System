@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if object %}Edit Task{% else %}Create Task{% endif %} - Yarl IT Hub
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-list-check"></i> 
+        {% if object %}Edit Task{% else %}Create New Task{% endif %}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'tasks_list' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Tasks
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Task Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="task-form">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.title.id_for_label }}" class="form-label">
+                            <i class="bi bi-pencil"></i> Title *
+                        </label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.title.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">
+                            <i class="bi bi-text-paragraph"></i> Description *
+                        </label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.description.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.initiative.id_for_label }}" class="form-label">
+                                    <i class="bi bi-lightbulb"></i> Initiative *
+                                </label>
+                                {{ form.initiative }}
+                                {% if form.initiative.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.initiative.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.assigned_to.id_for_label }}" class="form-label">
+                                    <i class="bi bi-person"></i> Assigned To *
+                                </label>
+                                {{ form.assigned_to }}
+                                {% if form.assigned_to.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.assigned_to.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.priority.id_for_label }}" class="form-label">
+                                    <i class="bi bi-exclamation-triangle"></i> Priority *
+                                </label>
+                                {{ form.priority }}
+                                {% if form.priority.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.priority.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.status.id_for_label }}" class="form-label">
+                                    <i class="bi bi-flag"></i> Status *
+                                </label>
+                                {{ form.status }}
+                                {% if form.status.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.status.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.progress_percentage.id_for_label }}" class="form-label">
+                                    <i class="bi bi-percent"></i> Progress %
+                                </label>
+                                {{ form.progress_percentage }}
+                                {% if form.progress_percentage.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.progress_percentage.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.due_date.id_for_label }}" class="form-label">
+                            <i class="bi bi-calendar"></i> Due Date & Time *
+                        </label>
+                        {{ form.due_date }}
+                        {% if form.due_date.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.due_date.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'tasks_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> 
+                            {% if object %}Update Task{% else %}Create Task{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Task Guidelines
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        Use clear, actionable task titles
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        Set realistic deadlines
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        Assign appropriate priority levels
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        Update progress regularly
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-update progress based on status
+    $('#{{ form.status.id_for_label }}').on('change', function() {
+        var status = $(this).val();
+        var progressField = $('#{{ form.progress_percentage.id_for_label }}');
+        
+        switch(status) {
+            case 'not_started':
+                progressField.val(0);
+                break;
+            case 'in_progress':
+                if (progressField.val() == 0) {
+                    progressField.val(25);
+                }
+                break;
+            case 'completed':
+                progressField.val(100);
+                break;
+            case 'on_hold':
+                if (progressField.val() == 0) {
+                    progressField.val(10);
+                }
+                break;
+        }
+    });
+    
+    // Update status based on progress
+    $('#{{ form.progress_percentage.id_for_label }}').on('input', function() {
+        var progress = parseInt($(this).val());
+        var statusField = $('#{{ form.status.id_for_label }}');
+        
+        if (progress === 0) {
+            statusField.val('not_started');
+        } else if (progress === 100) {
+            statusField.val('completed');
+        } else if (progress > 0 && statusField.val() === 'not_started') {
+            statusField.val('in_progress');
+        }
+    });
+</script>
+{% endblock %}

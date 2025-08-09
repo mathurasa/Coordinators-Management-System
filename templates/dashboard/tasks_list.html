@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tasks - Yarl IT Hub{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-list-check"></i> Tasks
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{% url 'task_create' %}" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-circle"></i> New Task
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportToCSV('tasks-table', 'tasks.csv')">
+                <i class="bi bi-download"></i> Export
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="row g-3 filter-form">
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select name="status" id="status" class="form-select">
+                            <option value="">All Statuses</option>
+                            {% for value, label in status_choices %}
+                                <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="priority" class="form-label">Priority</label>
+                        <select name="priority" id="priority" class="form-select">
+                            <option value="">All Priorities</option>
+                            {% for value, label in priority_choices %}
+                                <option value="{{ value }}" {% if request.GET.priority == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% if user.profile.role == 'admin' %}
+                    <div class="col-md-3">
+                        <label for="district" class="form-label">District</label>
+                        <select name="district" id="district" class="form-select">
+                            <option value="">All Districts</option>
+                            <!-- Districts will be populated by view -->
+                        </select>
+                    </div>
+                    {% endif %}
+                    <div class="col-md-3">
+                        <label for="search" class="form-label">Search</label>
+                        <div class="search-box">
+                            <input type="text" name="search" id="search" class="form-control search-input" 
+                                   placeholder="Search tasks..." value="{{ request.GET.search }}">
+                            <i class="bi bi-search"></i>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tasks List -->
+<div class="row">
+    {% if tasks %}
+        {% for task in tasks %}
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100 {% if task.is_overdue %}overdue{% endif %}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="status-badge task-{{ task.status|replace:'_':'-' }}">
+                        {{ task.get_status_display|upper }}
+                    </span>
+                    <span class="status-badge priority-{{ task.priority }}">
+                        {{ task.get_priority_display|upper }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <a href="{% url 'task_detail' task.pk %}" class="text-decoration-none">
+                            {{ task.title }}
+                        </a>
+                    </h5>
+                    <p class="card-text text-muted">{{ task.description|truncatechars:100 }}</p>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="text-muted">Progress</small>
+                            <small class="text-muted">{{ task.progress_percentage }}%</small>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" 
+                                 style="width: {{ task.progress_percentage }}%"
+                                 aria-valuenow="{{ task.progress_percentage }}" 
+                                 aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="bi bi-lightbulb"></i> {{ task.initiative.title|truncatechars:30 }}
+                        </small>
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="bi bi-person"></i> {{ task.assigned_to.user.get_full_name }}
+                        </small>
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted {% if task.is_overdue %}text-danger{% endif %}">
+                            <i class="bi bi-calendar"></i> Due: {{ task.due_date|date:"M d, Y H:i" }}
+                            {% if task.is_overdue %}
+                                <span class="badge bg-danger ms-1">Overdue</span>
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="btn-group">
+                            <a href="{% url 'task_detail' task.pk %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                            {% if user.profile.role == 'admin' or task.assigned_to == user.profile %}
+                            <a href="{% url 'task_update' task.pk %}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+                            {% endif %}
+                        </div>
+                        
+                        {% if user.profile.role == 'admin' or task.assigned_to == user.profile %}
+                        <div class="dropdown">
+                            <select class="form-select form-select-sm task-status-update" 
+                                    data-task-id="{{ task.pk }}" style="width: auto;">
+                                {% for value, label in status_choices %}
+                                    <option value="{{ value }}" {% if task.status == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="bi bi-list-check text-muted" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mt-3">No Tasks Found</h4>
+                <p class="text-muted">No tasks match your current filters.</p>
+                <a href="{% url 'task_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Create First Task
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Table View (hidden by default) -->
+<div class="d-none">
+    <table id="tasks-table" class="table">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Initiative</th>
+                <th>Assigned To</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Due Date</th>
+                <th>Progress</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr>
+                <td>{{ task.title }}</td>
+                <td>{{ task.initiative.title }}</td>
+                <td>{{ task.assigned_to.user.get_full_name }}</td>
+                <td>{{ task.get_priority_display }}</td>
+                <td>{{ task.get_status_display }}</td>
+                <td>{{ task.due_date|date:"Y-m-d H:i" }}</td>
+                <td>{{ task.progress_percentage }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Filter form auto-submit
+    $('.filter-form select').on('change', function() {
+        this.form.submit();
+    });
+    
+    // Search functionality
+    $('.search-input').on('keyup', function(e) {
+        if (e.key === 'Enter') {
+            this.form.submit();
+        }
+    });
+    
+    // Task status update
+    $('.task-status-update').on('change', function() {
+        var taskId = $(this).data('task-id');
+        var newStatus = $(this).val();
+        var card = $(this).closest('.card');
+        var progressBar = card.find('.progress-bar');
+        
+        // Update progress based on status
+        var progress = 0;
+        switch(newStatus) {
+            case 'not_started':
+                progress = 0;
+                break;
+            case 'in_progress':
+                progress = 50;
+                break;
+            case 'completed':
+                progress = 100;
+                break;
+            case 'on_hold':
+                progress = 25;
+                break;
+        }
+        
+        // Update progress bar
+        progressBar.css('width', progress + '%');
+        progressBar.attr('aria-valuenow', progress);
+        card.find('.progress').siblings().find('small:last').text(progress + '%');
+        
+        // Send AJAX request
+        $.ajax({
+            url: '/tasks/' + taskId + '/update-status/',
+            method: 'POST',
+            data: {
+                'status': newStatus,
+                'progress': progress,
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Update status badge
+                    var statusBadge = card.find('.task-not-started, .task-in-progress, .task-completed, .task-on-hold');
+                    statusBadge.removeClass().addClass('status-badge task-' + newStatus.replace('_', '-'));
+                    statusBadge.text(newStatus.replace('_', ' ').toUpperCase());
+                    
+                    // Remove overdue class if completed
+                    if (newStatus === 'completed') {
+                        card.removeClass('overdue');
+                    }
+                    
+                    showAlert('Task status updated successfully!', 'success');
+                } else {
+                    showAlert('Failed to update task status.', 'danger');
+                }
+            },
+            error: function() {
+                showAlert('Error updating task status.', 'danger');
+            }
+        });
+    });
+</script>
+{% endblock %}

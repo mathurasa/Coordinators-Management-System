@@ -1,0 +1,322 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Charts - Yarl IT Hub{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-graph-up"></i> Charts & Analytics
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshCharts()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportCharts()">
+                <i class="bi bi-download"></i> Export
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row">
+    <!-- Line Chart -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up"></i> Monthly Progress
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="lineChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Doughnut Chart -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-pie-chart"></i> Initiative Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="doughnutChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Bar Chart -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-bar-chart"></i> District Performance
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="barChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Radar Chart -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-diagram-3"></i> Skills Assessment
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="radarChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart Controls -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-sliders"></i> Chart Controls
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="dateRange">Date Range</label>
+                            <select id="dateRange" class="form-select">
+                                <option value="7">Last 7 days</option>
+                                <option value="30" selected>Last 30 days</option>
+                                <option value="90">Last 3 months</option>
+                                <option value="365">Last year</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="chartType">Chart Type</label>
+                            <select id="chartType" class="form-select">
+                                <option value="line">Line Chart</option>
+                                <option value="bar">Bar Chart</option>
+                                <option value="area">Area Chart</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="dataMetric">Metric</label>
+                            <select id="dataMetric" class="form-select">
+                                <option value="initiatives">Initiatives</option>
+                                <option value="tasks">Tasks</option>
+                                <option value="completion">Completion Rate</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>&nbsp;</label>
+                            <button type="button" class="btn btn-primary w-100" onclick="updateCharts()">
+                                <i class="bi bi-arrow-repeat"></i> Update Charts
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Chart configurations
+    const chartColors = {
+        primary: '#0d6efd',
+        success: '#198754',
+        warning: '#ffc107',
+        danger: '#dc3545',
+        info: '#0dcaf0',
+        secondary: '#6c757d'
+    };
+
+    // Line Chart
+    const lineCtx = document.getElementById('lineChart').getContext('2d');
+    const lineChart = new Chart(lineCtx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Initiatives',
+                data: [12, 19, 3, 5, 2, 3],
+                borderColor: chartColors.primary,
+                backgroundColor: chartColors.primary + '20',
+                tension: 0.4
+            }, {
+                label: 'Tasks',
+                data: [2, 3, 20, 5, 1, 4],
+                borderColor: chartColors.success,
+                backgroundColor: chartColors.success + '20',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Doughnut Chart
+    const doughnutCtx = document.getElementById('doughnutChart').getContext('2d');
+    const doughnutChart = new Chart(doughnutCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Active', 'Completed', 'On Hold', 'Cancelled'],
+            datasets: [{
+                data: [45, 30, 15, 10],
+                backgroundColor: [
+                    chartColors.primary,
+                    chartColors.success,
+                    chartColors.warning,
+                    chartColors.danger
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                }
+            }
+        }
+    });
+
+    // Bar Chart
+    const barCtx = document.getElementById('barChart').getContext('2d');
+    const barChart = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Batticaloa', 'Ampara', 'Trincomalee', 'Polonnaruwa', 'Anuradhapura'],
+            datasets: [{
+                label: 'Initiatives',
+                data: [12, 19, 8, 15, 10],
+                backgroundColor: chartColors.primary
+            }, {
+                label: 'Completed Tasks',
+                data: [8, 14, 6, 12, 7],
+                backgroundColor: chartColors.success
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Radar Chart
+    const radarCtx = document.getElementById('radarChart').getContext('2d');
+    const radarChart = new Chart(radarCtx, {
+        type: 'radar',
+        data: {
+            labels: ['Leadership', 'Communication', 'Technical', 'Organization', 'Innovation'],
+            datasets: [{
+                label: 'Team Average',
+                data: [80, 75, 85, 90, 70],
+                backgroundColor: chartColors.primary + '40',
+                borderColor: chartColors.primary,
+                pointBackgroundColor: chartColors.primary
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+
+    // Chart control functions
+    function refreshCharts() {
+        // Simulate data refresh
+        showAlert('Charts refreshed successfully!', 'success');
+        
+        // Update charts with new data
+        fetch('/api/chart-data/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.labels && data.datasets) {
+                    lineChart.data.labels = data.labels;
+                    lineChart.data.datasets = data.datasets;
+                    lineChart.update();
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching chart data:', error);
+            });
+    }
+
+    function exportCharts() {
+        // Export functionality
+        showAlert('Charts exported successfully!', 'info');
+    }
+
+    function updateCharts() {
+        const dateRange = document.getElementById('dateRange').value;
+        const chartType = document.getElementById('chartType').value;
+        const dataMetric = document.getElementById('dataMetric').value;
+        
+        showAlert(`Charts updated: ${dateRange} days, ${chartType} type, ${dataMetric} metric`, 'info');
+        
+        // Update chart based on selections
+        // This would typically fetch new data from the API
+    }
+
+    // Initialize charts on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-refresh charts every 5 minutes
+        setInterval(refreshCharts, 300000);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Documents - Yarl IT Hub{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-file-earmark"></i> Documents
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{% url 'document_create' %}" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-circle"></i> Upload Document
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportToCSV('documents-table', 'documents.csv')">
+                <i class="bi bi-download"></i> Export
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="row g-3 filter-form">
+                    {% if user.profile.role == 'admin' %}
+                    <div class="col-md-6">
+                        <label for="district" class="form-label">District</label>
+                        <select name="district" id="district" class="form-select">
+                            <option value="">All Districts</option>
+                            <!-- Districts will be populated by view -->
+                        </select>
+                    </div>
+                    {% endif %}
+                    <div class="col-md-6">
+                        <label for="search" class="form-label">Search</label>
+                        <div class="search-box">
+                            <input type="text" name="search" id="search" class="form-control search-input" 
+                                   placeholder="Search documents..." value="{{ request.GET.search }}">
+                            <i class="bi bi-search"></i>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Documents List -->
+<div class="row">
+    {% if documents %}
+        {% for document in documents %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="badge bg-primary">
+                        {% if document.file.name|slice:"-4:" == '.pdf' %}
+                            <i class="bi bi-file-pdf"></i> PDF
+                        {% elif document.file.name|slice:"-4:" == '.doc' or document.file.name|slice:"-5:" == '.docx' %}
+                            <i class="bi bi-file-word"></i> DOC
+                        {% elif document.file.name|slice:"-4:" == '.jpg' or document.file.name|slice:"-5:" == '.jpeg' or document.file.name|slice:"-4:" == '.png' or document.file.name|slice:"-4:" == '.gif' %}
+                            <i class="bi bi-file-image"></i> IMAGE
+                        {% else %}
+                            <i class="bi bi-file"></i> FILE
+                        {% endif %}
+                    </span>
+                    <small class="text-muted">
+                        {% if document.file_size %}
+                            {{ document.file_size|filesizeformat }}
+                        {% endif %}
+                    </small>
+                </div>
+                
+                {% if document.file.name|slice:"-4:" == '.jpg' or document.file.name|slice:"-5:" == '.jpeg' or document.file.name|slice:"-4:" == '.png' or document.file.name|slice:"-4:" == '.gif' %}
+                <div class="text-center p-3">
+                    <img src="{{ document.file.url }}" class="document-preview img-fluid rounded" 
+                         alt="{{ document.title }}" style="max-height: 150px;">
+                </div>
+                {% else %}
+                <div class="text-center p-4">
+                    <i class="bi bi-file-earmark" style="font-size: 3rem; color: #6c757d;"></i>
+                </div>
+                {% endif %}
+                
+                <div class="card-body">
+                    <h5 class="card-title">{{ document.title }}</h5>
+                    {% if document.description %}
+                    <p class="card-text text-muted">{{ document.description|truncatechars:100 }}</p>
+                    {% endif %}
+                    
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="bi bi-lightbulb"></i> {{ document.initiative.title|truncatechars:30 }}
+                        </small>
+                    </div>
+                    {% if document.task %}
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="bi bi-list-check"></i> {{ document.task.title|truncatechars:30 }}
+                        </small>
+                    </div>
+                    {% endif %}
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="bi bi-person"></i> {{ document.uploaded_by.user.get_full_name }}
+                        </small>
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar"></i> {{ document.created_at|date:"M d, Y H:i" }}
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex justify-content-between">
+                        {% if document.file.name|slice:"-4:" == '.pdf' %}
+                        <button type="button" class="btn btn-sm btn-outline-primary document-preview"
+                                data-file-url="{{ document.file.url }}" 
+                                data-file-name="{{ document.title }}">
+                            <i class="bi bi-eye"></i> Preview
+                        </button>
+                        {% else %}
+                        <a href="{{ document.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i> View
+                        </a>
+                        {% endif %}
+                        
+                        <a href="{{ document.file.url }}" download class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-download"></i> Download
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="bi bi-file-earmark text-muted" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mt-3">No Documents Found</h4>
+                <p class="text-muted">No documents match your current filters.</p>
+                <a href="{% url 'document_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Upload First Document
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Table View (hidden by default) -->
+<div class="d-none">
+    <table id="documents-table" class="table">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Initiative</th>
+                <th>Task</th>
+                <th>Uploaded By</th>
+                <th>Size</th>
+                <th>Created</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for document in documents %}
+            <tr>
+                <td>{{ document.title }}</td>
+                <td>{{ document.initiative.title }}</td>
+                <td>{{ document.task.title|default:"" }}</td>
+                <td>{{ document.uploaded_by.user.get_full_name }}</td>
+                <td>{{ document.file_size|filesizeformat }}</td>
+                <td>{{ document.created_at|date:"Y-m-d H:i" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Filter form auto-submit
+    $('.filter-form select').on('change', function() {
+        this.form.submit();
+    });
+    
+    // Search functionality
+    $('.search-input').on('keyup', function(e) {
+        if (e.key === 'Enter') {
+            this.form.submit();
+        }
+    });
+    
+    // Document preview modal
+    $('.document-preview').on('click', function() {
+        var fileUrl = $(this).data('file-url');
+        var fileName = $(this).data('file-name');
+        
+        var modal = `
+            <div class="modal fade" id="documentModal" tabindex="-1">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">${fileName}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <iframe src="${fileUrl}" width="100%" height="600px" frameborder="0"></iframe>
+                        </div>
+                        <div class="modal-footer">
+                            <a href="${fileUrl}" class="btn btn-primary" download>
+                                <i class="bi bi-download"></i> Download
+                            </a>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        $('body').append(modal);
+        $('#documentModal').modal('show');
+        
+        $('#documentModal').on('hidden.bs.modal', function() {
+            $(this).remove();
+        });
+    });
+</script>
+{% endblock %}
