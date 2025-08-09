@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import Initiative, Task, Note, Document, UserProfile, District
+from .models import Initiative, Task, Note, Document, UserProfile, District, InitiativeSheet, Event
 
 class InitiativeForm(forms.ModelForm):
     class Meta:
@@ -38,10 +38,8 @@ class TaskForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if user and hasattr(user, 'profile'):
             if user.profile.role == 'admin':
-                # Admin can assign to any coordinator
                 self.fields['assigned_to'].queryset = UserProfile.objects.filter(role='coordinator')
             else:
-                # Coordinator can only assign to themselves or other coordinators in their district
                 self.fields['assigned_to'].queryset = UserProfile.objects.filter(
                     role='coordinator', 
                     district=user.profile.district
@@ -66,7 +64,6 @@ class NoteForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if user and hasattr(user, 'profile'):
             if user.profile.role != 'admin':
-                # Coordinator can only add notes to their district's initiatives
                 self.fields['initiative'].queryset = Initiative.objects.filter(district=user.profile.district)
                 self.fields['task'].queryset = Task.objects.filter(initiative__district=user.profile.district)
 
@@ -87,7 +84,6 @@ class DocumentForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if user and hasattr(user, 'profile'):
             if user.profile.role != 'admin':
-                # Coordinator can only upload documents for their district's initiatives
                 self.fields['initiative'].queryset = Initiative.objects.filter(district=user.profile.district)
                 self.fields['task'].queryset = Task.objects.filter(initiative__district=user.profile.district)
 
@@ -171,3 +167,24 @@ class NoteFilterForm(forms.Form):
         empty_label="All Districts",
         widget=forms.Select(attrs={'class': 'form-select'})
     )
+
+class InitiativeSheetForm(forms.ModelForm):
+    class Meta:
+        model = InitiativeSheet
+        fields = ['sheet_url']
+        widgets = {
+            'sheet_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://docs.google.com/spreadsheets/...'}),
+        }
+
+class EventForm(forms.ModelForm):
+    class Meta:
+        model = Event
+        fields = ['title', 'description', 'start_datetime', 'end_datetime', 'meet_link', 'location']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'start_datetime': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+            'end_datetime': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+            'meet_link': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://meet.google.com/...'}),
+            'location': forms.TextInput(attrs={'class': 'form-control'}),
+        }

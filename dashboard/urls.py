@@ -15,6 +15,8 @@ urlpatterns = [
     path('initiatives/create/', views.InitiativeCreateView.as_view(), name='initiative_create'),
     path('initiatives/<int:pk>/edit/', views.InitiativeUpdateView.as_view(), name='initiative_update'),
     path('initiatives/<int:pk>/delete/', views.InitiativeDeleteView.as_view(), name='initiative_delete'),
+    path('initiatives/<int:pk>/sheets/add/', views.InitiativeSheetCreateView.as_view(), name='initiative_sheet_add'),
+    path('initiatives/<int:pk>/events/add/', views.EventCreateView.as_view(), name='initiative_event_add'),
     
     # Task Management
     path('tasks/', views.tasks_list, name='tasks_list'),
@@ -64,4 +66,6 @@ urlpatterns = [
     path('api/dashboard-stats/', views.get_dashboard_stats, name='dashboard_stats'),
     path('api/chart-data/', views.get_chart_data, name='chart_data'),
     path('api/notifications/', views.get_notifications, name='notifications'),
+    path('api/ai/summary/', views.ai_summary, name='ai_summary'),
+    path('api/ai/suggestions/', views.ai_suggestions, name='ai_suggestions'),
 ]

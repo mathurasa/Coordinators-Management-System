@@ -143,7 +143,7 @@ class Document(models.Model):
     description = models.TextField(blank=True)
     file = models.FileField(
         upload_to='documents/',
-        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'doc', 'docx', 'txt', 'jpg', 'jpeg', 'png', 'gif'])]
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'jpg', 'jpeg', 'png', 'gif'])]
     )
     initiative = models.ForeignKey(Initiative, on_delete=models.CASCADE, related_name='documents')
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='documents', null=True, blank=True)
@@ -161,3 +161,36 @@ class Document(models.Model):
         if self.file:
             self.file_size = self.file.size
         super().save(*args, **kwargs)
+
+class InitiativeSheet(models.Model):
+    """Coordinator-specific Google Sheet link for an initiative"""
+    initiative = models.ForeignKey(Initiative, on_delete=models.CASCADE, related_name='sheets')
+    coordinator = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='initiative_sheets')
+    sheet_url = models.URLField(max_length=500)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('initiative', 'coordinator')
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f"{self.initiative.title} - {self.coordinator.user.get_full_name()}"
+
+class Event(models.Model):
+    """Calendar event for initiatives including optional Google Meet link"""
+    initiative = models.ForeignKey(Initiative, on_delete=models.CASCADE, related_name='events')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    start_datetime = models.DateTimeField()
+    end_datetime = models.DateTimeField()
+    organizer = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='organized_events')
+    meet_link = models.URLField(max_length=500, blank=True)
+    location = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['start_datetime']
+
+    def __str__(self):
+        return f"{self.title} ({self.initiative.title})"

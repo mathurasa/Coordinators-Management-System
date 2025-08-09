@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import datetime, timedelta
-from dashboard.models import District, UserProfile, Initiative, Task, Note
+from dashboard.models import District, UserProfile, Initiative, Task, Note, InitiativeSheet, Event
 
 class Command(BaseCommand):
     help = 'Set up initial data for the Yarl IT Hub Coordinator Management System'
@@ -29,14 +29,17 @@ class Command(BaseCommand):
         # Create user profiles
         self.create_user_profiles()
         
-        # Create sample initiatives
-        self.create_sample_initiatives()
+        # Create preloaded initiatives
+        self.create_preloaded_initiatives()
         
         # Create sample tasks
         self.create_sample_tasks()
         
         # Create sample notes
         self.create_sample_notes()
+
+        # Create sample sheets and events
+        self.create_sample_sheets_and_events()
         
         self.stdout.write(
             self.style.SUCCESS('Successfully set up initial data!')
@@ -70,245 +73,112 @@ class Command(BaseCommand):
     
     def create_districts(self):
         districts_data = [
-            {
-                'name': 'Batticaloa',
-                'description': 'Eastern Province district focusing on rural development and education initiatives'
-            },
-            {
-                'name': 'Ampara',
-                'description': 'Agricultural and technology development programs in the Eastern Province'
-            },
-            {
-                'name': 'Trincomalee',
-                'description': 'Coastal development and fisheries technology programs'
-            },
-            {
-                'name': 'Polonnaruwa',
-                'description': 'Ancient city modernization and heritage preservation initiatives'
-            },
-            {
-                'name': 'Anuradhapura',
-                'description': 'Historical city development and archaeological technology projects'
-            }
+            {'name': 'Batticaloa', 'description': 'Eastern Province district focusing on rural development and education initiatives'},
+            {'name': 'Ampara', 'description': 'Agricultural and technology development programs in the Eastern Province'},
+            {'name': 'Trincomalee', 'description': 'Coastal development and fisheries technology programs'},
+            {'name': 'Polonnaruwa', 'description': 'Ancient city modernization and heritage preservation initiatives'},
+            {'name': 'Anuradhapura', 'description': 'Historical city development and archaeological technology projects'},
         ]
-        
-        for district_data in districts_data:
-            district, created = District.objects.get_or_create(
-                name=district_data['name'],
-                defaults={'description': district_data['description']}
-            )
-            if created:
-                self.stdout.write(f'Created district: {district.name}')
-            else:
-                self.stdout.write(f'District already exists: {district.name}')
+        for data in districts_data:
+            District.objects.get_or_create(name=data['name'], defaults={'description': data['description']})
     
     def create_user_profiles(self):
-        # Get districts
-        districts = District.objects.all()
-        
-        # Create coordinators for each district
         coordinators_data = [
-            {
-                'username': 'coord_batticaloa',
-                'email': 'batticaloa@yarlithub.com',
-                'first_name': 'Priya',
-                'last_name': 'Fernando',
-                'district': 'Batticaloa',
-                'phone': '+94771234001'
-            },
-            {
-                'username': 'coord_ampara',
-                'email': 'ampara@yarlithub.com',
-                'first_name': 'Sunil',
-                'last_name': 'Silva',
-                'district': 'Ampara',
-                'phone': '+94771234002'
-            },
-            {
-                'username': 'coord_trincomalee',
-                'email': 'trincomalee@yarlithub.com',
-                'first_name': 'Kamani',
-                'last_name': 'Perera',
-                'district': 'Trincomalee',
-                'phone': '+94771234003'
-            },
-            {
-                'username': 'coord_polonnaruwa',
-                'email': 'polonnaruwa@yarlithub.com',
-                'first_name': 'Ravi',
-                'last_name': 'Kumara',
-                'district': 'Polonnaruwa',
-                'phone': '+94771234004'
-            },
-            {
-                'username': 'coord_anuradhapura',
-                'email': 'anuradhapura@yarlithub.com',
-                'first_name': 'Manjula',
-                'last_name': 'Jayasinghe',
-                'district': 'Anuradhapura',
-                'phone': '+94771234005'
-            }
+            {'username': 'coord_batticaloa', 'email': 'batticaloa@yarlithub.com', 'first_name': 'Priya', 'last_name': 'Fernando', 'district': 'Batticaloa', 'phone': '+94771234001'},
+            {'username': 'coord_ampara', 'email': 'ampara@yarlithub.com', 'first_name': 'Sunil', 'last_name': 'Silva', 'district': 'Ampara', 'phone': '+94771234002'},
+            {'username': 'coord_trincomalee', 'email': 'trincomalee@yarlithub.com', 'first_name': 'Kamani', 'last_name': 'Perera', 'district': 'Trincomalee', 'phone': '+94771234003'},
+            {'username': 'coord_polonnaruwa', 'email': 'polonnaruwa@yarlithub.com', 'first_name': 'Ravi', 'last_name': 'Kumara', 'district': 'Polonnaruwa', 'phone': '+94771234004'},
+            {'username': 'coord_anuradhapura', 'email': 'anuradhapura@yarlithub.com', 'first_name': 'Manjula', 'last_name': 'Jayasinghe', 'district': 'Anuradhapura', 'phone': '+94771234005'},
         ]
-        
-        for coord_data in coordinators_data:
-            if not User.objects.filter(username=coord_data['username']).exists():
+        for data in coordinators_data:
+            if not User.objects.filter(username=data['username']).exists():
                 user = User.objects.create_user(
-                    username=coord_data['username'],
-                    email=coord_data['email'],
-                    password='coord123',
-                    first_name=coord_data['first_name'],
-                    last_name=coord_data['last_name']
+                    username=data['username'], email=data['email'], password='coord123',
+                    first_name=data['first_name'], last_name=data['last_name']
                 )
-                
-                district = District.objects.get(name=coord_data['district'])
-                UserProfile.objects.create(
-                    user=user,
-                    role='coordinator',
-                    district=district,
-                    phone=coord_data['phone'],
-                    bio=f'District Coordinator for {district.name}'
-                )
-                
-                self.stdout.write(f'Created coordinator: {user.username}')
-            else:
-                self.stdout.write(f'Coordinator already exists: {coord_data["username"]}')
+                district = District.objects.get(name=data['district'])
+                UserProfile.objects.create(user=user, role='coordinator', district=district, phone=data['phone'], bio=f'District Coordinator for {district.name}')
     
-    def create_sample_initiatives(self):
-        # Get coordinators
-        coordinators = UserProfile.objects.filter(role='coordinator')
-        
-        initiatives_data = [
-            {
-                'title': 'Digital Literacy Training Program',
-                'description': 'Comprehensive digital literacy training for rural communities',
-                'initiative_type': 'training',
-                'status': 'active',
-                'start_date': datetime.now().date(),
-                'end_date': (datetime.now() + timedelta(days=90)).date(),
-                'budget': 50000.00,
-                'kpi_target': 'Train 200 participants, 80% completion rate'
-            },
-            {
-                'title': 'Youth Leadership Workshop Series',
-                'description': 'Leadership development workshops for young professionals',
-                'initiative_type': 'workshop',
-                'status': 'active',
-                'start_date': (datetime.now() - timedelta(days=30)).date(),
-                'end_date': (datetime.now() + timedelta(days=60)).date(),
-                'budget': 30000.00,
-                'kpi_target': '5 workshops, 150 participants total'
-            },
-            {
-                'title': 'Community Tech Mentorship',
-                'description': 'One-on-one mentorship program for technology enthusiasts',
-                'initiative_type': 'mentorship',
-                'status': 'active',
-                'start_date': datetime.now().date(),
-                'end_date': (datetime.now() + timedelta(days=180)).date(),
-                'budget': 25000.00,
-                'kpi_target': '50 mentor-mentee pairs, 6-month program'
-            }
+    def create_preloaded_initiatives(self):
+        titles = [
+            'Makerspace',
+            'Puthiyapayanangal',
+            'YGC-Junior',
+            'YGC-Senior',
+            'Accelerator Program',
+            'WEHub',
+            'Uki',
         ]
-        
-        for i, coord in enumerate(coordinators[:3]):
-            if i < len(initiatives_data):
-                init_data = initiatives_data[i]
-                initiative, created = Initiative.objects.get_or_create(
-                    title=init_data['title'],
-                    defaults={
-                        'description': init_data['description'],
-                        'initiative_type': init_data['initiative_type'],
-                        'status': init_data['status'],
-                        'district': coord.district,
-                        'coordinator': coord,
-                        'start_date': init_data['start_date'],
-                        'end_date': init_data['end_date'],
-                        'budget': init_data['budget'],
-                        'kpi_target': init_data['kpi_target']
-                    }
-                )
-                if created:
-                    self.stdout.write(f'Created initiative: {initiative.title}')
+        # Assign to first few coordinators round-robin
+        coordinators = list(UserProfile.objects.filter(role='coordinator'))
+        if not coordinators:
+            return
+        start = datetime.now().date()
+        for i, title in enumerate(titles):
+            coord = coordinators[i % len(coordinators)]
+            Initiative.objects.get_or_create(
+                title=title,
+                district=coord.district,
+                defaults={
+                    'description': f'{title} initiative description',
+                    'initiative_type': 'other',
+                    'status': 'active',
+                    'coordinator': coord,
+                    'start_date': start,
+                    'end_date': start + timedelta(days=120),
+                    'budget': 100000.00,
+                    'kpi_target': 'Define KPIs for this initiative'
+                }
+            )
     
     def create_sample_tasks(self):
         initiatives = Initiative.objects.all()
-        coordinators = UserProfile.objects.filter(role='coordinator')
-        
         for initiative in initiatives:
-            # Create 2-3 tasks per initiative
-            tasks_data = [
-                {
-                    'title': f'Venue Booking for {initiative.title}',
-                    'description': 'Book appropriate venues for the program activities',
+            Task.objects.get_or_create(
+                title=f'Kickoff meeting for {initiative.title}',
+                initiative=initiative,
+                defaults={
+                    'description': 'Plan agenda and stakeholders',
+                    'assigned_to': initiative.coordinator,
+                    'created_by': initiative.coordinator,
                     'priority': 'high',
-                    'status': 'completed',
-                    'due_date': timezone.now() + timedelta(days=7),
-                    'progress_percentage': 100
-                },
-                {
-                    'title': f'Participant Registration for {initiative.title}',
-                    'description': 'Set up registration system and collect participant details',
-                    'priority': 'medium',
                     'status': 'in_progress',
-                    'due_date': timezone.now() + timedelta(days=14),
-                    'progress_percentage': 60
-                },
-                {
-                    'title': f'Material Preparation for {initiative.title}',
-                    'description': 'Prepare training materials and resources',
-                    'priority': 'medium',
-                    'status': 'not_started',
-                    'due_date': timezone.now() + timedelta(days=21),
-                    'progress_percentage': 0
+                    'due_date': timezone.now() + timedelta(days=7),
+                    'progress_percentage': 25
                 }
-            ]
-            
-            for task_data in tasks_data:
-                task, created = Task.objects.get_or_create(
-                    title=task_data['title'],
-                    defaults={
-                        'description': task_data['description'],
-                        'initiative': initiative,
-                        'assigned_to': initiative.coordinator,
-                        'created_by': initiative.coordinator,
-                        'priority': task_data['priority'],
-                        'status': task_data['status'],
-                        'due_date': task_data['due_date'],
-                        'progress_percentage': task_data['progress_percentage']
-                    }
-                )
-                if created:
-                    self.stdout.write(f'Created task: {task.title}')
-    
+            )
+
     def create_sample_notes(self):
-        initiatives = Initiative.objects.all()
-        
-        for initiative in initiatives:
-            notes_data = [
-                {
-                    'title': f'Planning Meeting - {initiative.title}',
-                    'content': 'Initial planning meeting held to discuss objectives, timeline, and resource requirements. Key stakeholders identified and roles assigned.',
+        for initiative in Initiative.objects.all():
+            Note.objects.get_or_create(
+                title=f'Initial planning - {initiative.title}',
+                initiative=initiative,
+                defaults={
+                    'content': 'Draft objectives and milestones.',
                     'note_type': 'meeting',
-                    'is_public': True
-                },
-                {
-                    'title': f'Progress Update - {initiative.title}',
-                    'content': 'Weekly progress update: Registration process initiated, venue confirmations pending, material development on track.',
-                    'note_type': 'milestone',
-                    'is_public': True
+                    'author': initiative.coordinator,
+                    'is_public': True,
                 }
-            ]
-            
-            for note_data in notes_data:
-                note, created = Note.objects.get_or_create(
-                    title=note_data['title'],
-                    defaults={
-                        'content': note_data['content'],
-                        'note_type': note_data['note_type'],
-                        'initiative': initiative,
-                        'author': initiative.coordinator,
-                        'is_public': note_data['is_public']
-                    }
-                )
-                if created:
-                    self.stdout.write(f'Created note: {note.title}')
+            )
+
+    def create_sample_sheets_and_events(self):
+        for initiative in Initiative.objects.all():
+            # Create a sample sheet link per initiative/coordinator
+            InitiativeSheet.objects.get_or_create(
+                initiative=initiative,
+                coordinator=initiative.coordinator,
+                defaults={'sheet_url': 'https://docs.google.com/spreadsheets/d/EXAMPLE'}
+            )
+            # Create a sample event with meet link
+            Event.objects.get_or_create(
+                initiative=initiative,
+                title=f'{initiative.title} Review Meeting',
+                start_datetime=timezone.now() + timedelta(days=3),
+                end_datetime=timezone.now() + timedelta(days=3, hours=2),
+                organizer=initiative.coordinator,
+                defaults={
+                    'description': 'Monthly review and planning',
+                    'meet_link': 'https://meet.google.com/xyz-abcd-123',
+                    'location': 'Online'
+                }
+            )

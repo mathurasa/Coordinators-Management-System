@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ initiative.title }} - Initiative Details{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+  <h1 class="h3">
+    <i class="bi bi-lightbulb"></i> {{ initiative.title }}
+  </h1>
+  <div class="btn-toolbar mb-2 mb-md-0">
+    <a href="{% url 'initiatives_list' %}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Back
+    </a>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-8">
+    <!-- Progress -->
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between">
+        <span>Progress Tracker</span>
+        <span class="fw-bold">{{ progress }}%</span>
+      </div>
+      <div class="card-body">
+        <div class="progress" style="height: 10px;">
+          <div class="progress-bar" role="progressbar" style="width: {{ progress }}%" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tasks (To-Do List) -->
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>To-Do List</span>
+        <a class="btn btn-sm btn-primary" href="{% url 'task_create' %}"><i class="bi bi-plus"></i> New Task</a>
+      </div>
+      <div class="card-body table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Assigned To</th>
+              <th>Status</th>
+              <th>Due</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for task in tasks %}
+            <tr>
+              <td><a href="{% url 'task_detail' task.pk %}">{{ task.title }}</a></td>
+              <td>{{ task.assigned_to.user.get_full_name }}</td>
+              <td><span class="status-badge status-{{ task.status|replace:'_':'-' }}">{{ task.get_status_display }}</span></td>
+              <td>{{ task.due_date|date:"M d, Y H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted">No tasks yet</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Notes</span>
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'note_create' %}"><i class="bi bi-plus"></i> Add Note</a>
+      </div>
+      <div class="card-body">
+        {% for note in notes %}
+        <div class="mb-3 pb-3 border-bottom">
+          <div class="d-flex justify-content-between">
+            <h6 class="mb-1">{{ note.title }}</h6>
+            <small class="text-muted">{{ note.created_at|date:"M d, Y H:i" }}</small>
+          </div>
+          <div class="text-muted">{{ note.content|truncatechars:180 }}</div>
+        </div>
+        {% empty %}
+        <div class="text-center text-muted">No notes yet</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Documents -->
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Documents</span>
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'document_create' %}"><i class="bi bi-upload"></i> Upload</a>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          {% for doc in documents %}
+          <div class="col-md-6 mb-2">
+            <div class="border rounded p-2 d-flex justify-content-between align-items-center">
+              <div>
+                <div class="fw-semibold">{{ doc.title }}</div>
+                <small class="text-muted">{{ doc.created_at|date:"M d, Y" }}</small>
+              </div>
+              <div>
+                <a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-secondary" target="_blank"><i class="bi bi-eye"></i></a>
+                <a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-success" download><i class="bi bi-download"></i></a>
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="col-12 text-center text-muted">No documents yet</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <!-- Details -->
+    <div class="card mb-3">
+      <div class="card-header">Details</div>
+      <div class="card-body">
+        <div class="mb-2"><strong>District:</strong> {{ initiative.district.name }}</div>
+        <div class="mb-2"><strong>Coordinator:</strong> {{ initiative.coordinator.user.get_full_name }}</div>
+        <div class="mb-2"><strong>Status:</strong> {{ initiative.get_status_display }}</div>
+        <div class="mb-2"><strong>Dates:</strong> {{ initiative.start_date|date:"M d, Y" }} → {% if initiative.end_date %}{{ initiative.end_date|date:"M d, Y" }}{% else %}Ongoing{% endif %}</div>
+        {% if initiative.budget %}
+        <div class="mb-2"><strong>Budget:</strong> LKR {{ initiative.budget|floatformat:0 }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Sheets -->
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Sheets</span>
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'initiative_sheet_add' initiative.pk %}"><i class="bi bi-plus"></i></a>
+      </div>
+      <div class="card-body">
+        {% for s in sheets %}
+        <div class="d-flex align-items-center mb-2">
+          <i class="bi bi-google me-2"></i>
+          <a href="{{ s.sheet_url }}" target="_blank">{{ s.coordinator.user.get_full_name }}'s sheet</a>
+        </div>
+        {% empty %}
+        <div class="text-muted">No sheets linked</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Events / Calendar -->
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Upcoming Events</span>
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'initiative_event_add' initiative.pk %}"><i class="bi bi-plus"></i></a>
+      </div>
+      <div class="card-body">
+        {% for e in events %}
+        <div class="mb-2">
+          <div class="fw-semibold">{{ e.title }}</div>
+          <small class="text-muted">{{ e.start_datetime|date:"M d, Y H:i" }}</small>
+          {% if e.meet_link %}<div><a href="{{ e.meet_link }}" target="_blank"><i class="bi bi-camera-video"></i> Google Meet</a></div>{% endif %}
+        </div>
+        {% empty %}
+        <div class="text-muted">No upcoming events</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- AI Assistant -->
+    <div class="card">
+      <div class="card-header">AI Assistant</div>
+      <div class="card-body">
+        <button class="btn btn-sm btn-outline-secondary mb-2" id="btn-ai-summary">Get Weekly Summary</button>
+        <button class="btn btn-sm btn-outline-secondary mb-2" id="btn-ai-suggestions">Get Suggestions</button>
+        <pre id="ai-output" class="bg-light p-2 rounded" style="white-space: pre-wrap"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  $('#btn-ai-summary').on('click', function(){
+    fetch('/api/ai/summary/').then(r=>r.json()).then(d=>{
+      $('#ai-output').text('Daily: ' + d.daily + '\n' + 'Weekly: ' + d.weekly + '\n' + 'Recommendations:\n- ' + d.recommendations.join('\n- '));
+    });
+  });
+  $('#btn-ai-suggestions').on('click', function(){
+    fetch('/api/ai/suggestions/').then(r=>r.json()).then(d=>{
+      $('#ai-output').text('Overdue tasks:\n- ' + d.overdue_tasks.map(t=>t.title).join('\n- ') + '\n\nLow progress initiatives:\n- ' + d.low_progress_initiatives.join('\n- ') + '\n\nIdeas:\n- ' + d.ideas.join('\n- '));
+    });
+  });
+</script>
+{% endblock %}

@@ -6,10 +6,10 @@ from django.db.models import Count, Q
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.contrib.auth.models import User
-from .models import District, UserProfile, Initiative, Task, Note, Document
-from .forms import InitiativeForm, TaskForm, NoteForm, DocumentForm, UserProfileForm
+from .models import District, UserProfile, Initiative, Task, Note, Document, InitiativeSheet, Event
+from .forms import InitiativeForm, TaskForm, NoteForm, DocumentForm, UserProfileForm, InitiativeSheetForm, EventForm
 from datetime import datetime, timedelta
 import csv
 import json
@@ -108,26 +108,37 @@ def initiatives_list(request):
 
 @login_required
 def initiative_detail(request, pk):
-    """Detail view for an initiative"""
+    """Detail view for an initiative including sheets and events"""
     user_profile = request.user.profile
-    
     if user_profile.role == 'admin':
         initiative = get_object_or_404(Initiative, pk=pk)
     else:
         initiative = get_object_or_404(Initiative, pk=pk, district=user_profile.district)
-    
-    tasks = initiative.tasks.all()
+
+    tasks = initiative.tasks.all().select_related('assigned_to')
     notes = initiative.notes.all()
     documents = initiative.documents.all()
-    
+    sheets = initiative.sheets.select_related('coordinator').all()
+    events = initiative.events.filter(start_datetime__gte=timezone.now()-timedelta(days=30)).order_by('start_datetime')
+
+    # Derive progress as average of task progress if tasks exist
+    if tasks.exists():
+        total_progress = sum(t.progress_percentage for t in tasks)
+        progress = int(total_progress / tasks.count())
+    else:
+        progress = 0
+
     context = {
         'initiative': initiative,
         'tasks': tasks,
         'notes': notes,
         'documents': documents,
-        'user_profile': user_profile,
+        'sheets': sheets,
+        'events': events,
+        'progress': progress,
+        'sheet_form': InitiativeSheetForm(),
+        'event_form': EventForm(),
     }
-    
     return render(request, 'dashboard/initiative_detail.html', context)
 
 @login_required
@@ -322,6 +333,49 @@ class DocumentCreateView(LoginRequiredMixin, CreateView):
         form.instance.uploaded_by = self.request.user.profile
         messages.success(self.request, 'Document uploaded successfully!')
         return super().form_valid(form)
+
+class InitiativeSheetCreateView(LoginRequiredMixin, CreateView):
+    model = InitiativeSheet
+    form_class = InitiativeSheetForm
+    template_name = 'dashboard/initiative_sheet_form.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.initiative = get_object_or_404(Initiative, pk=kwargs['pk'])
+        # permission check
+        if request.user.profile.role != 'admin' and request.user.profile.district != self.initiative.district:
+            messages.error(request, 'Access denied.')
+            return redirect('dashboard_home')
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        form.instance.initiative = self.initiative
+        form.instance.coordinator = self.request.user.profile if self.request.user.profile.role == 'coordinator' else self.initiative.coordinator
+        messages.success(self.request, 'Sheet link added successfully!')
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('initiative_detail', args=[self.initiative.pk])
+
+class EventCreateView(LoginRequiredMixin, CreateView):
+    model = Event
+    form_class = EventForm
+    template_name = 'dashboard/event_form.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.initiative = get_object_or_404(Initiative, pk=kwargs['pk'])
+        if request.user.profile.role != 'admin' and request.user.profile.district != self.initiative.district:
+            messages.error(request, 'Access denied.')
+            return redirect('dashboard_home')
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        form.instance.initiative = self.initiative
+        form.instance.organizer = self.request.user.profile
+        messages.success(self.request, 'Event created successfully!')
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('initiative_detail', args=[self.initiative.pk])
 
 # API Views for AJAX
 @login_required
@@ -724,3 +778,54 @@ def get_notifications(request):
         })
     
     return JsonResponse({'notifications': notifications})
+
+# AI assistant stubs
+@login_required
+def ai_summary(request):
+    """Return AI-like daily/weekly summaries based on recent data (stub)."""
+    user_profile = request.user.profile
+    if user_profile.role == 'admin':
+        tasks = Task.objects.all()
+        notes = Note.objects.all()
+    else:
+        tasks = Task.objects.filter(initiative__district=user_profile.district)
+        notes = Note.objects.filter(initiative__district=user_profile.district)
+
+    week_ago = timezone.now() - timedelta(days=7)
+    completed_week = tasks.filter(completed_at__gte=week_ago).count()
+    created_week = tasks.filter(created_at__gte=week_ago).count()
+    notes_week = notes.filter(created_at__gte=week_ago).count()
+
+    summary = {
+        'daily': f"{tasks.filter(updated_at__date=timezone.now().date()).count()} tasks updated today.",
+        'weekly': f"{completed_week} tasks completed and {created_week} new tasks created in the last 7 days. {notes_week} notes added.",
+        'recommendations': [
+            'Prioritize overdue high-urgency tasks in the next 48 hours.',
+            'Schedule a review meeting for initiatives with < 30% progress.',
+            'Encourage coordinators to add weekly notes for better visibility.'
+        ]
+    }
+    return JsonResponse(summary)
+
+@login_required
+def ai_suggestions(request):
+    """Provide simple, rule-based next-step suggestions (stub)."""
+    user_profile = request.user.profile
+    queryset = Task.objects.all() if user_profile.role == 'admin' else Task.objects.filter(initiative__district=user_profile.district)
+    overdue = list(queryset.filter(due_date__lt=timezone.now(), status__in=['not_started', 'in_progress']).values('title')[:5])
+    low_progress_inits = []
+    for init in (Initiative.objects.all() if user_profile.role == 'admin' else Initiative.objects.filter(district=user_profile.district)):
+        tasks = init.tasks.all()
+        if tasks.exists():
+            avg = sum(t.progress_percentage for t in tasks) / tasks.count()
+            if avg < 30:
+                low_progress_inits.append(init.title)
+    return JsonResponse({
+        'overdue_tasks': overdue,
+        'low_progress_initiatives': low_progress_inits[:5],
+        'ideas': [
+            'Host a cross-district knowledge sharing session.',
+            'Leverage alumni mentors for YGC cohorts.',
+            'Pilot a mini-hackathon under Makerspace.'
+        ]
+    })
