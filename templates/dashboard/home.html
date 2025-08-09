@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load string_extras %}
 
 {% block title %}Dashboard - Yarl IT Hub{% endblock %}
 
@@ -140,7 +141,7 @@
                                     <td>{{ task.initiative.title|truncatechars:25 }}</td>
                                     <td>{{ task.assigned_to.user.get_full_name|default:task.assigned_to.user.username }}</td>
                                     <td>
-                                        <span class="status-badge status-{{ task.status|replace:'_':'-' }}">
+                                        <span class="status-badge status-{{ task.status|dash }}">
                                             {{ task.get_status_display|upper }}
                                         </span>
                                     </td>

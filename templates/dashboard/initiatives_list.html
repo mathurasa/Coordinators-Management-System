@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load string_extras %}
 
 {% block title %}Initiatives - Yarl IT Hub{% endblock %}
 
@@ -82,7 +83,7 @@
         <div class="col-lg-6 col-xl-4 mb-4">
             <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <span class="status-badge status-{{ initiative.status|replace:'_':'-' }}">
+                    <span class="status-badge status-{{ initiative.status|dash }}">
                         {{ initiative.get_status_display|upper }}
                     </span>
                     <span class="badge bg-secondary">{{ initiative.get_initiative_type_display }}</span>
