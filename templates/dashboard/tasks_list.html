@@ -110,7 +110,7 @@
                     
                     <div class="mb-2">
                         <small class="text-muted">
-                            <i class="bi bi-lightbulb"></i> {{ task.initiative.title|truncatechars:30 }}
+                            <i class="bi bi-lightbulb"></i> <a href="{% url 'initiative_detail' task.initiative.pk %}" class="text-decoration-none">{{ task.initiative.title|truncatechars:30 }}</a>
                         </small>
                     </div>
                     <div class="mb-2">

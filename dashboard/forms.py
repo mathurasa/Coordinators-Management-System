@@ -18,6 +18,16 @@ class InitiativeForm(forms.ModelForm):
             'kpi_target': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user and hasattr(user, 'profile') and user.profile.role != 'admin':
+            # Coordinators can only select their own district
+            if user.profile.district:
+                self.fields['district'].queryset = District.objects.filter(pk=user.profile.district.pk)
+            else:
+                self.fields['district'].queryset = District.objects.none()
+
 class TaskForm(forms.ModelForm):
     class Meta:
         model = Task
@@ -188,3 +198,23 @@ class EventForm(forms.ModelForm):
             'meet_link': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://meet.google.com/...'}),
             'location': forms.TextInput(attrs={'class': 'form-control'}),
         }
+
+class EventAdminForm(forms.ModelForm):
+    class Meta:
+        model = Event
+        fields = ['initiative', 'title', 'description', 'start_datetime', 'end_datetime', 'meet_link', 'location']
+        widgets = {
+            'initiative': forms.Select(attrs={'class': 'form-select'}),
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'start_datetime': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+            'end_datetime': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+            'meet_link': forms.URLInput(attrs={'class': 'form-control'}),
+            'location': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user and hasattr(user, 'profile') and user.profile.role != 'admin':
+            self.fields['initiative'].queryset = Initiative.objects.filter(district=user.profile.district)

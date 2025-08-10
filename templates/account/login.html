@@ -10,11 +10,9 @@
             <div class="card shadow mt-5">
                 <div class="card-body p-5">
                     <div class="text-center mb-4">
-                        <h2 class="text-primary">
-                            <i class="bi bi-gear-wide-connected"></i>
-                        </h2>
-                        <h4 class="text-dark">Yarl IT Hub</h4>
-                        <p class="text-muted">Coordinator Management System</p>
+                        <img src="https://www.yarlithub.org/wp-content/uploads/2024/01/Yarl-IT-Hub-Logo-PNG.png" alt="Yarl IT Hub" class="yit-logo mb-2" />
+                        <h4 class="text-dark mb-0">Yarl IT Hub</h4>
+                        <small class="text-muted">Coordinator Management System</small>
                     </div>
 
                     {% if form.errors %}
@@ -27,6 +25,13 @@
                                 {% endfor %}
                             </ul>
                         </div>
+                    {% endif %}
+
+                    <!-- Debug: Show CSRF token -->
+                    {% if debug %}
+                    <div class="alert alert-info">
+                        <small>CSRF Token: {{ csrf_token }}</small>
+                    </div>
                     {% endif %}
 
                     <form method="post" action="{% url 'account_login' %}">
@@ -99,26 +104,7 @@
                 </div>
             </div>
 
-            <!-- Sample Credentials Card -->
-            <div class="card mt-3">
-                <div class="card-body">
-                    <h6 class="card-title">Sample Credentials</h6>
-                    <div class="row">
-                        <div class="col-12">
-                            <strong>Admin:</strong><br>
-                            <code>mathu / yit@2024</code>
-                        </div>
-                    </div>
-                    <div class="row mt-2">
-                        <div class="col-12">
-                            <strong>Coordinators:</strong><br>
-                            <code>coord_batticaloa / coord123</code><br>
-                            <code>coord_ampara / coord123</code><br>
-                            <code>coord_trincomalee / coord123</code>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            
         </div>
     </div>
 </div>
@@ -156,6 +142,10 @@
     .btn-primary:hover {
         background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
         transform: translateY(-1px);
+    }
+
+    .yit-logo {
+        height: 48px;
     }
 </style>
 {% endblock %}

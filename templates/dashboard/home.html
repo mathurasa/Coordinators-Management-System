@@ -273,13 +273,13 @@
                                 <div class="row text-center">
                                     <div class="col-6">
                                         <div class="text-primary fw-bold">
-                                            {{ district.initiatives.count }}
+                                            {{ district.total_initiatives }}
                                         </div>
                                         <small class="text-muted">Initiatives</small>
                                     </div>
                                     <div class="col-6">
                                         <div class="text-success fw-bold">
-                                            {{ district.initiatives.filter.status='active'|length }}
+                                            {{ district.active_initiatives }}
                                         </div>
                                         <small class="text-muted">Active</small>
                                     </div>

@@ -6,10 +6,12 @@ from django.db.models import Count, Q
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views import View
+from django.contrib.auth.forms import UserCreationForm
 from django.urls import reverse_lazy, reverse
 from django.contrib.auth.models import User
 from .models import District, UserProfile, Initiative, Task, Note, Document, InitiativeSheet, Event
-from .forms import InitiativeForm, TaskForm, NoteForm, DocumentForm, UserProfileForm, InitiativeSheetForm, EventForm
+from .forms import InitiativeForm, TaskForm, NoteForm, DocumentForm, UserProfileForm, InitiativeSheetForm, EventForm, EventAdminForm
 from datetime import datetime, timedelta
 import csv
 import json
@@ -22,6 +24,20 @@ def is_coordinator(user):
     """Check if user is coordinator"""
     return hasattr(user, 'profile') and user.profile.role == 'coordinator'
 
+# Custom login view to handle CSRF properly
+def custom_login(request):
+    if request.method == 'POST':
+        username = request.POST.get('login')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect('dashboard_home')
+        else:
+            messages.error(request, 'Invalid username/email or password.')
+    
+    return render(request, 'dashboard/custom_login.html')
+
 @login_required
 def dashboard_home(request):
     """Main dashboard view"""
@@ -32,13 +48,17 @@ def dashboard_home(request):
         # Admin sees all data
         initiatives = Initiative.objects.all()
         tasks = Task.objects.all()
-        districts = District.objects.all()
+        districts_qs = District.objects.all()
         coordinators = UserProfile.objects.filter(role='coordinator')
     else:
         # Coordinator sees only their district data
         initiatives = Initiative.objects.filter(district=user_profile.district)
         tasks = Task.objects.filter(initiative__district=user_profile.district)
-        districts = [user_profile.district] if user_profile.district else []
+        districts_qs = (
+            District.objects.filter(pk=user_profile.district.pk)
+            if user_profile.district
+            else District.objects.none()
+        )
         coordinators = UserProfile.objects.filter(district=user_profile.district, role='coordinator')
     
     # Calculate statistics
@@ -58,6 +78,12 @@ def dashboard_home(request):
     week_ago = timezone.now() - timedelta(days=7)
     weekly_completed_tasks = tasks.filter(completed_at__gte=week_ago).count()
     
+    # Annotate districts for template counters
+    districts = districts_qs.annotate(
+        total_initiatives=Count('initiatives', distinct=True),
+        active_initiatives=Count('initiatives', filter=Q(initiatives__status='active'), distinct=True),
+    )
+
     context = {
         'user_profile': user_profile,
         'total_initiatives': total_initiatives,
@@ -79,31 +105,46 @@ def dashboard_home(request):
 def initiatives_list(request):
     """List all initiatives"""
     user_profile = request.user.profile
-    
-    if user_profile.role == 'admin':
-        initiatives = Initiative.objects.all()
-    else:
-        initiatives = Initiative.objects.filter(district=user_profile.district)
-    
+
+    queryset = Initiative.objects.all() if user_profile.role == 'admin' else Initiative.objects.filter(
+        district=user_profile.district
+    )
+
     # Filtering
     status_filter = request.GET.get('status')
     district_filter = request.GET.get('district')
     type_filter = request.GET.get('type')
-    
+    search_query = request.GET.get('search')
+
     if status_filter:
-        initiatives = initiatives.filter(status=status_filter)
+        queryset = queryset.filter(status=status_filter)
     if district_filter:
-        initiatives = initiatives.filter(district__name=district_filter)
+        queryset = queryset.filter(district__name=district_filter)
     if type_filter:
-        initiatives = initiatives.filter(initiative_type=type_filter)
-    
+        queryset = queryset.filter(initiative_type=type_filter)
+    if search_query:
+        queryset = queryset.filter(Q(title__icontains=search_query) | Q(description__icontains=search_query))
+
+    # Optimize and annotate for template counters
+    initiatives = queryset.select_related('district', 'coordinator__user').annotate(
+        total_tasks=Count('tasks'),
+        completed_tasks=Count('tasks', filter=Q(tasks__status='completed')),
+        notes_count=Count('notes'),
+    )
+
+    # District options for admin filtering
+    districts = District.objects.all() if user_profile.role == 'admin' else District.objects.filter(
+        pk=user_profile.district.pk
+    ) if user_profile.district else District.objects.none()
+
     context = {
         'initiatives': initiatives,
         'user_profile': user_profile,
         'status_choices': Initiative.STATUS_CHOICES,
         'type_choices': Initiative.TYPE_CHOICES,
+        'districts': districts,
     }
-    
+
     return render(request, 'dashboard/initiatives_list.html', context)
 
 @login_required
@@ -256,6 +297,21 @@ class InitiativeCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, 'Initiative created successfully!')
         return super().form_valid(form)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        # Pass current user if the form supports user-scoped querysets
+        kwargs.setdefault('user', self.request.user)
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # No object yet on create; provide zeroed stats for template
+        context.setdefault('total_tasks_count', 0)
+        context.setdefault('completed_tasks_count', 0)
+        context.setdefault('notes_count', 0)
+        context.setdefault('documents_count', 0)
+        return context
+
 class InitiativeUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Initiative
     form_class = InitiativeForm
@@ -271,6 +327,20 @@ class InitiativeUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         messages.success(self.request, 'Initiative updated successfully!')
         return super().form_valid(form)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.setdefault('user', self.request.user)
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        initiative = self.object
+        context['total_tasks_count'] = initiative.tasks.count()
+        context['completed_tasks_count'] = initiative.tasks.filter(status='completed').count()
+        context['notes_count'] = initiative.notes.count()
+        context['documents_count'] = initiative.documents.count()
+        return context
+
 class TaskCreateView(LoginRequiredMixin, CreateView):
     model = Task
     form_class = TaskForm
@@ -281,6 +351,11 @@ class TaskCreateView(LoginRequiredMixin, CreateView):
         form.instance.created_by = self.request.user.profile
         messages.success(self.request, 'Task created successfully!')
         return super().form_valid(form)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.setdefault('user', self.request.user)
+        return kwargs
 
 class TaskUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Task
@@ -297,6 +372,11 @@ class TaskUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         messages.success(self.request, 'Task updated successfully!')
         return super().form_valid(form)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.setdefault('user', self.request.user)
+        return kwargs
+
 class NoteCreateView(LoginRequiredMixin, CreateView):
     model = Note
     form_class = NoteForm
@@ -307,6 +387,11 @@ class NoteCreateView(LoginRequiredMixin, CreateView):
         form.instance.author = self.request.user.profile
         messages.success(self.request, 'Note created successfully!')
         return super().form_valid(form)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.setdefault('user', self.request.user)
+        return kwargs
 
 class NoteUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Note
@@ -323,6 +408,11 @@ class NoteUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         messages.success(self.request, 'Note updated successfully!')
         return super().form_valid(form)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.setdefault('user', self.request.user)
+        return kwargs
+
 class DocumentCreateView(LoginRequiredMixin, CreateView):
     model = Document
     form_class = DocumentForm
@@ -333,6 +423,11 @@ class DocumentCreateView(LoginRequiredMixin, CreateView):
         form.instance.uploaded_by = self.request.user.profile
         messages.success(self.request, 'Document uploaded successfully!')
         return super().form_valid(form)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.setdefault('user', self.request.user)
+        return kwargs
 
 class InitiativeSheetCreateView(LoginRequiredMixin, CreateView):
     model = InitiativeSheet
@@ -577,6 +672,24 @@ def export_data(request):
                 initiative.start_date,
                 initiative.end_date or '',
             ])
+    elif export_type == 'tasks':
+        response['Content-Disposition'] = 'attachment; filename="tasks.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Title', 'Initiative', 'Assigned To', 'Priority', 'Status', 'Due Date', 'Progress %'])
+        if user_profile.role == 'admin':
+            tasks = Task.objects.select_related('initiative', 'assigned_to__user')
+        else:
+            tasks = Task.objects.filter(initiative__district=user_profile.district).select_related('initiative', 'assigned_to__user')
+        for task in tasks:
+            writer.writerow([
+                task.title,
+                task.initiative.title,
+                task.assigned_to.user.get_full_name(),
+                task.get_priority_display(),
+                task.get_status_display(),
+                task.due_date,
+                task.progress_percentage,
+            ])
     
     return response
 
@@ -622,10 +735,66 @@ class UserUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def test_func(self):
         return self.request.user.profile.role == 'admin'
 
+class UserProfileUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = UserProfile
+    form_class = UserProfileForm
+    template_name = 'dashboard/user_profile_form.html'
+    success_url = reverse_lazy('users_list')
+
+    def test_func(self):
+        return self.request.user.profile.role == 'admin'
+
+class UserCreateView(LoginRequiredMixin, UserPassesTestMixin, View):
+    template_name = 'dashboard/user_create.html'
+
+    def test_func(self):
+        return self.request.user.profile.role == 'admin'
+
+    def get(self, request):
+        return render(request, self.template_name, {
+            'user_form': UserCreationForm(),
+            'profile_form': UserProfileForm(),
+        })
+
+    def post(self, request):
+        user_form = UserCreationForm(request.POST)
+        profile_form = UserProfileForm(request.POST, request.FILES)
+        if user_form.is_valid() and profile_form.is_valid():
+            user = user_form.save()
+            # Set additional fields
+            user.first_name = request.POST.get('first_name', '')
+            user.last_name = request.POST.get('last_name', '')
+            user.email = request.POST.get('email', '')
+            user.is_active = True
+            user.save()
+            profile = profile_form.save(commit=False)
+            profile.user = user
+            profile.save()
+            messages.success(request, 'User created successfully!')
+            return redirect('users_list')
+        messages.error(request, 'Please correct the errors below.')
+        return render(request, self.template_name, {
+            'user_form': user_form,
+            'profile_form': profile_form,
+        })
+
+class UserDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = User
+    template_name = 'dashboard/user_confirm_delete.html'
+    success_url = reverse_lazy('users_list')
+
+    def test_func(self):
+        # Admins cannot delete themselves
+        return self.request.user.profile.role == 'admin' and self.get_object() != self.request.user
+
 # Districts Management
 @login_required
 def districts_list(request):
     """List all districts"""
+    if request.user.profile.role != 'admin':
+        messages.error(request, 'Access denied.')
+        return redirect('dashboard_home')
+
     districts = District.objects.all()
     
     context = {
@@ -638,12 +807,10 @@ def districts_list(request):
 @login_required
 def district_detail(request, pk):
     """District detail view"""
-    district = get_object_or_404(District, pk=pk)
-    
-    # Check permissions
-    if request.user.profile.role != 'admin' and request.user.profile.district != district:
+    if request.user.profile.role != 'admin':
         messages.error(request, 'Access denied.')
         return redirect('dashboard_home')
+    district = get_object_or_404(District, pk=pk)
     
     context = {
         'district': district,
@@ -652,17 +819,50 @@ def district_detail(request, pk):
     
     return render(request, 'dashboard/district_detail.html', context)
 
+class DistrictCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = District
+    fields = ['name', 'description']
+    template_name = 'dashboard/district_form.html'
+    success_url = reverse_lazy('districts_list')
+
+    def test_func(self):
+        return self.request.user.profile.role == 'admin'
+
+class DistrictUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = District
+    fields = ['name', 'description']
+    template_name = 'dashboard/district_form.html'
+    success_url = reverse_lazy('districts_list')
+
+    def test_func(self):
+        return self.request.user.profile.role == 'admin'
+
+class DistrictDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = District
+    template_name = 'dashboard/district_confirm_delete.html'
+    success_url = reverse_lazy('districts_list')
+
+    def test_func(self):
+        return self.request.user.profile.role == 'admin'
+
 # Calendar and Timeline
 @login_required
 def calendar_view(request):
     """Calendar view"""
     user_profile = request.user.profile
-    
-    context = {
+    # Gather upcoming events limits
+    if user_profile.role == 'admin':
+        events = Event.objects.select_related('initiative').order_by('start_datetime')[:50]
+        form = EventAdminForm(user=request.user)
+    else:
+        events = Event.objects.filter(initiative__district=user_profile.district).select_related('initiative').order_by('start_datetime')[:50]
+        form = EventAdminForm(user=request.user)
+
+    return render(request, 'dashboard/calendar.html', {
         'user_profile': user_profile,
-    }
-    
-    return render(request, 'dashboard/calendar.html', context)
+        'events': events,
+        'event_form': form,
+    })
 
 @login_required
 def timeline_view(request):

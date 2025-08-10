@@ -54,7 +54,7 @@
                         <label for="district" class="form-label">District</label>
                         <select name="district" id="district" class="form-select">
                             <option value="">All Districts</option>
-                            {% for district in user.profile.district.all %}
+                            {% for district in districts %}
                                 <option value="{{ district.name }}" {% if request.GET.district == district.name %}selected{% endif %}>
                                     {{ district.name }}
                                 </option>
@@ -98,15 +98,15 @@
                     
                     <div class="row text-center mb-3">
                         <div class="col-4">
-                            <div class="text-primary fw-bold">{{ initiative.tasks.count }}</div>
+                            <div class="text-primary fw-bold">{{ initiative.total_tasks }}</div>
                             <small class="text-muted">Tasks</small>
                         </div>
                         <div class="col-4">
-                            <div class="text-success fw-bold">{{ initiative.tasks.filter.status='completed'|length }}</div>
+                            <div class="text-success fw-bold">{{ initiative.completed_tasks }}</div>
                             <small class="text-muted">Completed</small>
                         </div>
                         <div class="col-4">
-                            <div class="text-info fw-bold">{{ initiative.notes.count }}</div>
+                            <div class="text-info fw-bold">{{ initiative.notes_count }}</div>
                             <small class="text-muted">Notes</small>
                         </div>
                     </div>

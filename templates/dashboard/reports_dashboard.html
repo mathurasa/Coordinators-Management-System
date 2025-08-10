@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports - Yarl IT Hub{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+  <h1 class="h2"><i class="bi bi-bar-chart"></i> Reports</h1>
+  <div class="btn-toolbar mb-2 mb-md-0">
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'initiatives_report' %}">Initiatives</a>
+    <a class="btn btn-sm btn-outline-secondary ms-2" href="{% url 'tasks_report' %}">Tasks</a>
+    <a class="btn btn-sm btn-primary ms-2" href="{% url 'export_data' %}?type=initiatives"><i class="bi bi-download"></i> Export CSV</a>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-6 mb-4">
+    <div class="card h-100">
+      <div class="card-header"><strong>KPIs (This Week)</strong></div>
+      <div class="card-body">
+        <ul class="list-unstyled mb-0">
+          <li class="mb-2"><strong>Total Initiatives:</strong> {{ user_profile.district.initiatives.count|default:0 }}</li>
+          <li class="mb-2"><strong>Completed Tasks:</strong> <span id="kpi-completed">-</span></li>
+          <li class="mb-2"><strong>Overdue Tasks:</strong> <span id="kpi-overdue">-</span></li>
+          <li class="mb-2"><strong>Notes Added:</strong> <span id="kpi-notes">-</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6 mb-4">
+    <div class="card h-100">
+      <div class="card-header"><strong>Trends (Last 6 months)</strong></div>
+      <div class="card-body">
+        <canvas id="trendChart" height="160"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12 mb-4">
+    <div class="card">
+      <div class="card-header"><strong>Quick Exports</strong></div>
+      <div class="card-body">
+        <a class="btn btn-outline-primary me-2" href="{% url 'export_data' %}?type=initiatives">Download Initiatives CSV</a>
+        <a class="btn btn-outline-primary" href="{% url 'export_data' %}?type=tasks">Download Tasks CSV</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Load dashboard stats for KPIs
+  fetch('{% url 'dashboard_stats' %}').then(r => r.json()).then(data => {
+    document.getElementById('kpi-completed').innerText = data.completed_tasks;
+    document.getElementById('kpi-overdue').innerText = data.overdue_tasks;
+  });
+
+  // Load chart data
+  fetch('{% url 'chart_data' %}').then(r => r.json()).then(cfg => {
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    new Chart(ctx, { type: 'line', data: cfg, options: { responsive: true, plugins: { legend: { position: 'bottom' }}}});
+  });
+</script>
+{% endblock %}
+
+
+
+
+

@@ -153,98 +153,15 @@
 
     // Line Chart
     const lineCtx = document.getElementById('lineChart').getContext('2d');
-    const lineChart = new Chart(lineCtx, {
-        type: 'line',
-        data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-            datasets: [{
-                label: 'Initiatives',
-                data: [12, 19, 3, 5, 2, 3],
-                borderColor: chartColors.primary,
-                backgroundColor: chartColors.primary + '20',
-                tension: 0.4
-            }, {
-                label: 'Tasks',
-                data: [2, 3, 20, 5, 1, 4],
-                borderColor: chartColors.success,
-                backgroundColor: chartColors.success + '20',
-                tension: 0.4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top',
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
+    const lineChart = new Chart(lineCtx, { type: 'line', data: { labels: [], datasets: []}, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' }}, scales: { y: { beginAtZero: true }}}});
 
     // Doughnut Chart
     const doughnutCtx = document.getElementById('doughnutChart').getContext('2d');
-    const doughnutChart = new Chart(doughnutCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Active', 'Completed', 'On Hold', 'Cancelled'],
-            datasets: [{
-                data: [45, 30, 15, 10],
-                backgroundColor: [
-                    chartColors.primary,
-                    chartColors.success,
-                    chartColors.warning,
-                    chartColors.danger
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                }
-            }
-        }
-    });
+    const doughnutChart = new Chart(doughnutCtx, { type: 'doughnut', data: { labels: ['Active','Completed','On Hold','Cancelled'], datasets: [{ data: [0,0,0,0], backgroundColor: [chartColors.primary, chartColors.success, chartColors.warning, chartColors.danger]}]}, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' }}}});
 
     // Bar Chart
     const barCtx = document.getElementById('barChart').getContext('2d');
-    const barChart = new Chart(barCtx, {
-        type: 'bar',
-        data: {
-            labels: ['Batticaloa', 'Ampara', 'Trincomalee', 'Polonnaruwa', 'Anuradhapura'],
-            datasets: [{
-                label: 'Initiatives',
-                data: [12, 19, 8, 15, 10],
-                backgroundColor: chartColors.primary
-            }, {
-                label: 'Completed Tasks',
-                data: [8, 14, 6, 12, 7],
-                backgroundColor: chartColors.success
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top',
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
+    const barChart = new Chart(barCtx, { type: 'bar', data: { labels: [], datasets: []}, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' }}, scales: { y: { beginAtZero: true }}}});
 
     // Radar Chart
     const radarCtx = document.getElementById('radarChart').getContext('2d');
@@ -279,10 +196,6 @@
 
     // Chart control functions
     function refreshCharts() {
-        // Simulate data refresh
-        showAlert('Charts refreshed successfully!', 'success');
-        
-        // Update charts with new data
         fetch('/api/chart-data/')
             .then(response => response.json())
             .then(data => {
@@ -291,6 +204,23 @@
                     lineChart.data.datasets = data.datasets;
                     lineChart.update();
                 }
+                // Build doughnut from current initiative status on page via AJAX
+                fetch('/api/dashboard-stats/').then(r=>r.json()).then(stats=>{
+                  // approximate: completed vs active, others as zero for now
+                  doughnutChart.data.datasets[0].data = [stats.active_initiatives, stats.completed_tasks, 0, 0];
+                  doughnutChart.update();
+                });
+                // Build bar by districts via server-rendered list endpoint quickly
+                fetch('/districts/').then(res=>res.text()).then(html=>{
+                  const parser = new DOMParser();
+                  const doc = parser.parseFromString(html, 'text/html');
+                  const cards = doc.querySelectorAll('.card .card-title');
+                  const labels = []; const values = [];
+                  cards.forEach(c=>{ labels.push(c.textContent.trim()); values.push(1); });
+                  barChart.data.labels = labels;
+                  barChart.data.datasets = [{ label: 'Districts', data: values, backgroundColor: chartColors.primary }];
+                  barChart.update();
+                }).catch(()=>{});
             })
             .catch(error => {
                 console.error('Error fetching chart data:', error);
@@ -315,7 +245,7 @@
 
     // Initialize charts on page load
     document.addEventListener('DOMContentLoaded', function() {
-        // Auto-refresh charts every 5 minutes
+        refreshCharts();
         setInterval(refreshCharts, 300000);
     });
 </script>

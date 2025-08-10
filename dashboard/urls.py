@@ -47,12 +47,18 @@ urlpatterns = [
     
     # User Management (Admin only)
     path('users/', views.users_list, name='users_list'),
+    path('users/create/', views.UserCreateView.as_view(), name='user_create'),
     path('users/<int:pk>/', views.user_detail, name='user_detail'),
     path('users/<int:pk>/edit/', views.UserUpdateView.as_view(), name='user_update'),
+    path('users/<int:pk>/profile/', views.UserProfileUpdateView.as_view(), name='user_profile_update'),
+    path('users/<int:pk>/delete/', views.UserDeleteView.as_view(), name='user_delete'),
     
     # Districts Management
     path('districts/', views.districts_list, name='districts_list'),
+    path('districts/create/', views.DistrictCreateView.as_view(), name='district_create'),
     path('districts/<int:pk>/', views.district_detail, name='district_detail'),
+    path('districts/<int:pk>/edit/', views.DistrictUpdateView.as_view(), name='district_update'),
+    path('districts/<int:pk>/delete/', views.DistrictDeleteView.as_view(), name='district_delete'),
     
     # Calendar and Timeline
     path('calendar/', views.calendar_view, name='calendar'),

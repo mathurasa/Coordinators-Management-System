@@ -46,12 +46,12 @@ class Initiative(models.Model):
     ]
     
     TYPE_CHOICES = [
-        ('training', 'Training Program'),
+        ('initiatives', 'Initiatives'),
         ('workshop', 'Workshop'),
-        ('mentorship', 'Mentorship'),
-        ('community', 'Community Outreach'),
-        ('research', 'Research Project'),
-        ('other', 'Other'),
+        ('sessions', 'Sessions'),
+        ('community_event', 'Community Event'),
+        # Keep internal value 'other' for compatibility with preloaded data
+        ('other', 'Others'),
     ]
     
     title = models.CharField(max_length=200)

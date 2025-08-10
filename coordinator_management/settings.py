@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-pcm41e4p!#s9$j!k#h!*!00l9v*^u$c8yrwo#ypq1c30999r2r
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '0.0.0.0']
 
 
 # Application definition
@@ -59,6 +59,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
 ]
+
+
 
 ROOT_URLCONF = 'coordinator_management.urls'
 
@@ -150,6 +152,17 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 SITE_ID = 1
+
+# CSRF Settings for Development
+CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000', 'http://localhost:8000']
+CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_HTTPONLY = False
+
+# Additional CSRF settings to prevent token rotation issues
+CSRF_COOKIE_NAME = 'csrftoken'
+CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
+CSRF_COOKIE_AGE = 31449600  # 1 year
+CSRF_USE_SESSIONS = False
 
 # AllAuth Settings (Updated for latest version)
 ACCOUNT_LOGIN_METHODS = {'username', 'email'}

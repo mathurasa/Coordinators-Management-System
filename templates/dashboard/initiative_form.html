@@ -230,21 +230,21 @@
             <div class="card-body">
                 <div class="row text-center">
                     <div class="col-6">
-                        <div class="text-primary fw-bold">{{ object.tasks.count }}</div>
+                        <div class="text-primary fw-bold">{{ total_tasks_count }}</div>
                         <small class="text-muted">Total Tasks</small>
                     </div>
                     <div class="col-6">
-                        <div class="text-success fw-bold">{{ object.tasks.filter.status='completed'|length }}</div>
+                        <div class="text-success fw-bold">{{ completed_tasks_count }}</div>
                         <small class="text-muted">Completed</small>
                     </div>
                 </div>
                 <div class="row text-center mt-2">
                     <div class="col-6">
-                        <div class="text-info fw-bold">{{ object.notes.count }}</div>
+                        <div class="text-info fw-bold">{{ notes_count }}</div>
                         <small class="text-muted">Notes</small>
                     </div>
                     <div class="col-6">
-                        <div class="text-warning fw-bold">{{ object.documents.count }}</div>
+                        <div class="text-warning fw-bold">{{ documents_count }}</div>
                         <small class="text-muted">Documents</small>
                     </div>
                 </div>

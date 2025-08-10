@@ -10,7 +10,7 @@
     </h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
-            <button type="button" class="btn btn-sm btn-primary">
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#calendarEventModal">
                 <i class="bi bi-plus"></i> New Event
             </button>
             <button type="button" class="btn btn-sm btn-outline-secondary">
@@ -27,13 +27,7 @@
                 <h5 class="mb-0">Event Calendar</h5>
             </div>
             <div class="card-body">
-                <div id="calendar-container" style="height: 600px;">
-                    <div class="text-center mt-5">
-                        <i class="bi bi-calendar" style="font-size: 5rem; color: #ccc;"></i>
-                        <h4 class="text-muted mt-3">Calendar View</h4>
-                        <p class="text-muted">Interactive calendar for scheduling and events</p>
-                    </div>
-                </div>
+                <div id="calendar-container" style="height: 600px;"></div>
             </div>
         </div>
     </div>
@@ -44,44 +38,23 @@
                 <h6 class="mb-0">Upcoming Events</h6>
             </div>
             <div class="card-body">
+                {% for e in events %}
                 <div class="event-item mb-3">
                     <div class="d-flex">
                         <div class="event-date text-center me-3">
-                            <div class="date-day">15</div>
-                            <div class="date-month">Aug</div>
+                            <div class="date-day">{{ e.start_datetime|date:"d" }}</div>
+                            <div class="date-month">{{ e.start_datetime|date:"M" }}</div>
                         </div>
                         <div>
-                            <h6 class="mb-1">Team Meeting</h6>
-                            <small class="text-muted">10:00 AM - 11:00 AM</small>
+                            <h6 class="mb-1">{{ e.title }}</h6>
+                            <small class="text-muted">{{ e.start_datetime|date:"H:i" }} - {{ e.end_datetime|date:"H:i" }}</small><br>
+                            <small class="text-muted">{{ e.initiative.title }}</small>
                         </div>
                     </div>
                 </div>
-                
-                <div class="event-item mb-3">
-                    <div class="d-flex">
-                        <div class="event-date text-center me-3">
-                            <div class="date-day">18</div>
-                            <div class="date-month">Aug</div>
-                        </div>
-                        <div>
-                            <h6 class="mb-1">Workshop</h6>
-                            <small class="text-muted">2:00 PM - 5:00 PM</small>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="event-item">
-                    <div class="d-flex">
-                        <div class="event-date text-center me-3">
-                            <div class="date-day">22</div>
-                            <div class="date-month">Aug</div>
-                        </div>
-                        <div>
-                            <h6 class="mb-1">Project Review</h6>
-                            <small class="text-muted">9:00 AM - 12:00 PM</small>
-                        </div>
-                    </div>
-                </div>
+                {% empty %}
+                <div class="text-muted">No upcoming events</div>
+                {% endfor %}
             </div>
         </div>
     </div>
@@ -109,4 +82,78 @@
     color: #6c757d;
 }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const calendarEl = document.getElementById('calendar-container');
+  const calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    height: 600,
+    headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek' },
+    events: [
+      {% for e in events %}
+      { title: '{{ e.title|escapejs }}', start: '{{ e.start_datetime|date:"c" }}', end: '{{ e.end_datetime|date:"c" }}', url: '{% url 'initiative_detail' e.initiative.pk %}' },
+      {% endfor %}
+    ],
+    eventClick: function(info){ if(info.event.url){ info.jsEvent.preventDefault(); window.location = info.event.url; } }
+  });
+  calendar.render();
+});
+</script>
+
+<!-- Create Event Modal (calendar-level) -->
+<div class="modal fade" id="calendarEventModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Create Event</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="{% if user_profile.role == 'admin' %}{% url 'initiative_event_add' events.0.initiative.pk %}{% else %}{% if events %}{% url 'initiative_event_add' events.0.initiative.pk %}{% endif %}{% endif %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          {% if user_profile.role == 'admin' %}
+          <div class="mb-3">
+            <label class="form-label">Initiative</label>
+            {{ event_form.initiative }}
+          </div>
+          {% endif %}
+          <div class="mb-3">
+            <label class="form-label">Title</label>
+            {{ event_form.title }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            {{ event_form.description }}
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Start</label>
+              {{ event_form.start_datetime }}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">End</label>
+              {{ event_form.end_datetime }}
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Meet Link</label>
+            {{ event_form.meet_link }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Location</label>
+            {{ event_form.location }}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 {% endblock %}

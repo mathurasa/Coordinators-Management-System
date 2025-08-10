@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Districts - Yarl IT Hub{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+  <h1 class="h2"><i class="bi bi-geo-alt"></i> Districts</h1>
+  <div class="btn-toolbar mb-2 mb-md-0">
+    <a href="{% url 'district_create' %}" class="btn btn-sm btn-primary">
+      <i class="bi bi-plus-circle"></i> New District
+    </a>
+  </div>
+  </div>
+
+<div class="row">
+  {% for district in districts %}
+  <div class="col-lg-4 mb-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title">{{ district.name }}</h5>
+        <p class="card-text text-muted">{{ district.description|default:"" }}</p>
+      </div>
+      <div class="card-footer bg-transparent d-flex justify-content-between">
+        <a href="{% url 'district_detail' district.pk %}" class="btn btn-sm btn-outline-primary">View</a>
+        <div>
+          <a href="{% url 'district_update' district.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+          <a href="{% url 'district_delete' district.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12 text-center text-muted py-5">No districts found.</div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+
+
+
+
